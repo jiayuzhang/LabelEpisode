@@ -1,0 +1,154 @@
+/*
+Theme Name: Depot Child
+Theme URI: http://depot.mikado-themes.com
+Description: A child theme of Depot Theme
+Author: Mikado Themes
+Author URI: http://themeforest.net/user/elated-themes
+Version: 1.0.0
+Text Domain: depot
+Template: depot
+*/
+
+
+/***Fix Bug***/
+
+/*1. Product Description*/
+
+.mkd-content .mkd-content-inner>.mkd-container>.mkd-container-inner, .mkd-content .mkd-content-inner>.mkd-full-width>.mkd-full-width-inner {
+  overflow:visible !important;
+
+}
+
+
+/*2. Description words break line*/
+
+.mkd-page-content-holder {
+
+ word-break: break-all;
+
+}
+
+
+/*3. About related product background*/
+
+.postid-45 .mkd-content .mkd-content-inner > .mkd-container, .postid-45 .mkd-content .mkd-content-inner > .mkd-full-width {
+
+background-color: #fff;
+
+}
+
+
+/*************************************************/
+
+
+/***Revise Style***/
+
+
+/*1. Menu position*/
+
+#nav-menu-item-50{
+  left: 600% !important;
+  position: relative;
+  margin: 0 auto;
+}
+
+#nav-menu-item-62{
+  right: 280%;
+  position: relative;
+  margin: 0 auto;
+}
+
+
+
+
+/*2. Dropdown menu*/
+
+.mkd-drop-down .narrow .second .inner ul li, .mkd-vertical-menu .narrow .second .inner ul li{
+  width: 125px !important;
+}
+
+.mkd-drop-down .second,
+.mkd-vertical-menu .second {
+float: left;
+}
+
+
+/*3. Footer border*/
+
+.mkd-page-footer .mkd-footer-bottom-holder{
+  border: 0px !important;
+}
+
+/*4. About search bar size on product category page*/
+
+.input-holder{
+  width: 260px;
+}
+
+/*5. Price filter*/
+.widget.woocommerce.widget_price_filter .price_slider_wrapper{
+  width: 62% !important;
+}
+
+/*6. Mobile menu arrow size*/
+.mkd-mobile-header .mkd-mobile-nav .mobile_arrow{
+  font-size: 30px !important;
+  top: 8px !important;
+}
+
+/*7. Mobile menu and its font size*/
+.mkd-mobile-header .mkd-mobile-side-area{
+  width: 250px !important;
+}
+
+
+.mkd-mobile-header .mkd-mobile-nav ul li a{
+  font-size: 14px !important;
+}
+
+
+/*8. Vendor header and left bar*/
+.header_area{
+  display: none;
+}
+
+#wcfmmp-store .left_sidebar{
+  width: 9% !important;
+}
+
+
+/*9. Change quantity on product page*/
+.mkd-quantity-label{
+  font-family: Catamaran, sans-serif;
+  font-weight: bold;
+  color: #000;
+  padding-right: 5px;
+}
+
+
+
+/*10. Quantity border*/
+.mkd-quantity-buttons{
+  padding-left: 10px !important;
+}
+
+/*11. Hide "add to cart" and fixed the price on home page
+Path: wp-content\themes\depot\assets\css\woocommerce.min.css*/
+ul.products > .product:hover .price {
+  opacity: 1 !important;
+  -webkit-transform: translateX(0px) !important;
+  -moz-transform: translateX(0px) !important;
+  transform: translateX(0px) !important;
+}
+
+
+.mkd-pl-add-to-cart {
+  display: none !important;
+}
+
+
+/*12. Hide vendor button on product page
+Hide vendor edit button*/
+.wcfm_buttons{
+  display: none;
+}
