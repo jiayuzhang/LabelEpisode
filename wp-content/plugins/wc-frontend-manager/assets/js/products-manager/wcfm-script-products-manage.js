@@ -573,6 +573,13 @@ jQuery( document ).ready( function( $ ) {
 		  if(ele.hasClass('wcfm-wp-fields-uploader')) {
 				var uploadEle = ele;
 				ele_name = uploadEle.find('.multi_input_block_element').data('name');
+				//====================================================
+        // LabelEpisode - set placeholder img on uploadEle in newly added variation option
+        //====================================================
+        uploadEle.find('img').attr('src', uploadEle.find('img').data('placeholder'));
+        //====================================================
+        // LabelEpisode end - set placeholder img on uploadEle in newly added variation option
+        //====================================================
 				uploadEle.find('img').attr('id', holder_id+'_'+multi_input_name+'_'+multi_input_blockCount + '_' + ele_name + '_' + nested_multi_input_block_count + '_display');
 				uploadEle.find('.multi_input_block_element').attr('id', holder_id+'_'+multi_input_name+'_'+multi_input_blockCount + '_' + ele_name + '_' + nested_multi_input_block_count).attr('name', holder_name+'['+multi_input_blockCount+']['+multi_input_name+']['+nested_multi_input_block_count+']['+ele_name+']');
 				uploadEle.find('.upload_button').attr('id', holder_id+'_'+multi_input_name+'_'+multi_input_blockCount + '_' + ele_name + '_' + nested_multi_input_block_count + '_button').attr('name', holder_id+'_'+multi_input_name+'_'+multi_input_blockCount + '_' + ele_name + '_' + nested_multi_input_block_count + '_button');

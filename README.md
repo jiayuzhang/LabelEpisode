@@ -2,6 +2,13 @@
 
 LabelEpisode WordPress project
 
+## General Guidance
+
+Only make code changes in themes/depot-child.
+
+If not possible, check in plugins/some-plugin, commit, make your fix in plugins/some-plugin, commit again.
+
+
 ## Plugin Versions
 
 List of plugin versions (Apr, 2019)

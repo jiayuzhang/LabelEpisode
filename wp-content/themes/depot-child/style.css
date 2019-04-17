@@ -152,3 +152,15 @@ Hide vendor edit button*/
 .wcfm_buttons{
   display: none;
 }
+
+
+/*************************************************/
+/* WCFM override styles */
+/*************************************************/
+/* Add product - variation gallery images */
+.le-variation-gallery .multi_input_block {
+  margin-left: 39%;
+  padding-left: 0;
+}
+
+
