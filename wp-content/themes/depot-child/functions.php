@@ -5,6 +5,7 @@
 if ( ! function_exists( 'depot_mikado_child_theme_enqueue_scripts' ) ) {
     function depot_mikado_child_theme_enqueue_scripts() {
         wp_enqueue_style( 'depot-mikado-child-style', get_stylesheet_directory_uri() . '/style.css' );
+        wp_enqueue_script( 'depot-mikado-child-script', get_stylesheet_directory_uri() . '/main.js', array ( 'woo-variation-gallery' ), false, true );
     }
 
     // The parent depot enqueues many stylesheets, to ensure we load the latest, assign a higher
@@ -103,6 +104,75 @@ add_action( 'after_wcfm_product_variation_meta_save', 'wp_le_after_wcfm_product_
 
 //====================================================
 // End of Integration woo-variation-gallery and wc-frontend-manager
+//====================================================
+
+
+//====================================================
+// Remove default unselect variation option
+//====================================================
+
+// Inspired by plugin 'force-default-variant-for-woocommerce'
+
+// Remove 'Choose an option' from dropdown
+function wp_le_woocommerce_dropdown_variation_attribute_options_html( $html, $args ) {
+  if ( empty( $args['selected'] ) ) {
+    return $html;
+  }
+
+  $show_option_none_text = $args['show_option_none'] ? $args['show_option_none'] : __( 'Choose an option', 'woocommerce' );
+  $show_option_none_html = '<option value="">' . esc_html( $show_option_none_text ) . '</option>';
+
+  $html = str_replace($show_option_none_html, '', $html);
+
+  return $html;
+}
+add_filter( 'woocommerce_dropdown_variation_attribute_options_html', 'wp_le_woocommerce_dropdown_variation_attribute_options_html', 12, 2 );
+
+// Returns the default variation option. If not set, choose the first variation id
+function wp_le_woocommerce_product_get_default_attributes( $defaults ) {
+  global $product;
+
+  if ( !$product ) {
+    return $defaults;
+  }
+
+  if ( !empty( $defaults ) ) {
+    return $defaults;
+  }
+
+  if ( $product->post_type !== 'product' ) {
+    return $defaults;
+  }
+
+  if ( !$product->is_type( 'variable' ) ) {
+    return $defaults;
+  }
+
+  // Gets the first child product variation (if any)
+  $variation = wc_get_product( $product->get_children()[0] );
+  if ( empty( $variation ) ) {
+    return $defaults;
+  }
+
+  $attr = $variation->get_attributes();
+  $defaults = array();
+  foreach( $attr as $key => $value ) {
+    $defaults[$key] = $value;
+  }
+  return $defaults;
+}
+add_filter( 'woocommerce_product_get_default_attributes', 'wp_le_woocommerce_product_get_default_attributes', 10, 1 );
+
+// Remove the Clear selection link.
+function hpy_fdv_remove_clear_text( $value ) {
+
+    $value = "";
+    return $value;
+
+}
+add_filter( 'woocommerce_reset_variations_link', 'hpy_fdv_remove_clear_text', 10, 1 );
+//====================================================
+// Remove default unselect variation option
 //====================================================
 
 
