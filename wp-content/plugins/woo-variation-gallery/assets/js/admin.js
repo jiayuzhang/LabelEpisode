@@ -224,15 +224,21 @@ var WooVariationGalleryAdmin = function ($) {
         }, {
             key: 'ProNotice',
             value: function ProNotice($el) {
-                var total = $($el).closest('.woo-variation-gallery-wrapper').find('.woo-variation-gallery-images > li').length;
-                $($el).closest('.woo-variation-gallery-wrapper').find('.woo-variation-gallery-images > li').each(function (i, el) {
-                    if (i >= 2) {
-                        $(el).remove();
-                        $($el).closest('.woo-variation-gallery-wrapper').find('.woo-variation-gallery-pro-button').show();
-                    } else {
-                        $($el).closest('.woo-variation-gallery-wrapper').find('.woo-variation-gallery-pro-button').hide();
-                    }
-                });
+                //====================================================
+                // LabelEpisode - bypass woo-variation-gallery pro check
+                //====================================================
+                // var total = $($el).closest('.woo-variation-gallery-wrapper').find('.woo-variation-gallery-images > li').length;
+                // $($el).closest('.woo-variation-gallery-wrapper').find('.woo-variation-gallery-images > li').each(function (i, el) {
+                //     if (i >= 2) {
+                //         $(el).remove();
+                //         $($el).closest('.woo-variation-gallery-wrapper').find('.woo-variation-gallery-pro-button').show();
+                //     } else {
+                //         $($el).closest('.woo-variation-gallery-wrapper').find('.woo-variation-gallery-pro-button').hide();
+                //     }
+                // });
+                //====================================================
+                // LabelEpisode end - bypass woo-variation-gallery pro check
+                //====================================================
             }
         }, {
             key: 'RemoveImage',

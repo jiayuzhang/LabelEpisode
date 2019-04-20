@@ -6,7 +6,9 @@ LabelEpisode WordPress project
 
 Only make code changes in themes/depot-child.
 
-If not possible, check in plugins/some-plugin, commit, make your fix in plugins/some-plugin, commit again.
+If not possible, check in plugins/some-plugin, commit, make your fix in plugins/some-plugin, commit again, so that the second commit contains only minimal patch code.
+
+Also, to ease search through Github commits, add text "**#source-patch**"" in commit message.
 
 
 ## Plugin Versions

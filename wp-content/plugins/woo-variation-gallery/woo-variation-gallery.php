@@ -70,7 +70,14 @@
 			}
 
 			public function is_pro_active() {
-        return class_exists( 'Woo_Variation_Gallery_Pro' );
+        //====================================================
+        // LabelEpisode - bypass woo-variation-gallery pro check
+        //====================================================
+        return false;
+        // return class_exists( 'Woo_Variation_Gallery_Pro' );
+        //====================================================
+        // LabelEpisode end - bypass woo-variation-gallery pro check
+        //====================================================
 			}
 
 			private function deactivate_feedback_reasons() {
@@ -343,10 +350,17 @@
 
 				wp_enqueue_style( 'woo-variation-gallery-admin', esc_url( $this->assets_uri( "/css/admin{$suffix}.css" ) ), array(), $this->version() );
 
-				if ( $this->is_pro_active() ) {
-					return;
-				}
-				wp_enqueue_script( 'woo-variation-gallery-admin', esc_url( $this->assets_uri( "/js/admin{$suffix}.js" ) ), array( 'jquery', 'jquery-ui-sortable', 'wp-util' ), $this->version(), true );
+        //====================================================
+        // LabelEpisode - bypass woo-variation-gallery pro check
+        //====================================================
+        // if ( $this->is_pro_active() ) {
+        //  return;
+        // }
+        // Not include admin.min.js, just admin.js in which we add hacky patch
+        wp_enqueue_script( 'woo-variation-gallery-admin', esc_url( $this->assets_uri( "/js/admin.js" ) ), array( 'jquery', 'jquery-ui-sortable', 'wp-util' ), $this->version(), true );
+        //====================================================
+        // LabelEpisode end - bypass woo-variation-gallery pro check
+        //====================================================
 
 				wp_localize_script( 'woo-variation-gallery-admin', 'woo_variation_gallery_admin', array(
 					'choose_image' => esc_html__( 'Choose Image', 'woo-variation-gallery' ),
