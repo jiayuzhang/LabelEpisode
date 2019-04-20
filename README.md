@@ -11,6 +11,28 @@ If not possible, check in plugins/some-plugin, commit, make your fix in plugins/
 Also, to ease search through Github commits, add text "**#source-patch**"" in commit message.
 
 
+## Deployment
+
+Assign a tag **server-head** to the current commit where server has been updated to.
+
+At development phase, we will reuse and move the same tag to HEAD everytime server has been deployed. Since Git tag can only be assigned to one commit, we have to do the following:
+
+```
+git tag server-head some-commit
+git tag -d server-head
+git tag server-head new-commit-server-deployed
+git push --force origin server-head
+```
+
+Use labelepisode cli `le` to deploy as below:
+
+  - incremental, sftp only diffs after a commit/tag, (mostly, server-head)
+    ```
+    le deploy -h labelepisode.com -u z9dxje3vnh6c -r /home/z9dxje3vnh6c/public_html -d server-head
+    ```
+  - full, sftp all local tracked files
+
+
 ## Plugin Versions
 
 List of plugin versions (Apr, 2019)
