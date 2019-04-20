@@ -1,0 +1,83 @@
+#!/usr/bin/env node
+const execSync = require('child_process').execSync;
+const minimist = require('minimist');
+const path = require('path');
+const process = require('process');
+
+process.chdir(__dirname);
+
+function help() {
+  console.log(`
+Usage: le command [options]
+
+Commands:
+  help - show helpdoc
+    <no options>
+
+  deploy - deploy local files (requires sshconfig setup first)
+    -h, --host   host       ip or alias of destination server, default 'labelepisode.com'
+    -c, --commit hash       git commit hash or tag, only deploy diffs since that
+                            if not specified, deploy all local files
+    -u, --user   user       username to connect
+    -r, --root   dir        root directory on server, default '/'
+    -d, --dryrun            true to dryrun, output commands only
+
+Examples:
+  $ le help
+  $ le deploy -h labelepisode.com -u z9dxje3vnh6c -r /home/z9dxje3vnh6c/public_html -d server-head
+    `);
+}
+
+// TODO: support deploy a particular commit/tag
+function deploy(args) {
+  const host = args.h || args.host || 'labelepisode.com';
+  const user = args.u || args.user;
+  const rootDir = args.r || args.root || '/';
+  const diffCommit = args.c || args.commit;
+
+  let trackedFilesStr;
+  if (diffCommit) {
+    // List of diff files since the specified commit.
+    trackedFilesStr = execSync(`git diff ${diffCommit} --name-only`).toString();
+  } else {
+    // List of all files tracked.
+    trackedFilesStr = execSync(`git ls-files`).toString();
+  }
+
+  let cmd = `sftp ${user}@${host} <<EOF\n`;
+  trackedFilesStr.split('\n').forEach(ln => {
+    ln = ln.trim();
+    // Any files outside of wp-content are ignored, e.g. README.md
+    if (ln && ln.startsWith('wp-content')) {
+      cmd += `put ${ln} ${path.join(rootDir, ln)}\n`
+    }
+  });
+  cmd += 'EOF';
+
+  if (args.d || args.dry) {
+    console.log('Command to run');
+    console.log('==========================================');
+    console.log(cmd);
+    console.log('==========================================');
+  } else {
+    execSync(cmd, { stdio: 'inherit' });
+  }
+}
+
+// Main program
+const args = minimist(process.argv.slice(2));
+
+// Opens helpdoc via any of `le`, `le help`
+const cmd = args._[0] || 'help';
+switch (cmd) {
+  case 'help':
+    help();
+    break;
+
+  case 'deploy':
+    deploy(args);
+    break;
+
+  default:
+    console.error(`"${cmd}" is not a valid command!`);
+}

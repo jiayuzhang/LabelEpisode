@@ -1,0 +1,16 @@
+{
+  "name": "wordpress",
+  "version": "1.0.0",
+  "description": "LabelEpisode WordPress project",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jiayuzhang/LabelEpisode.git"
+  },
+  "author": "jiayuzhang",
+  "license": "ISC",
+  "dependencies": {
+    "minimist": "^1.2.0"
+  }
+}

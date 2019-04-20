@@ -20,3 +20,8 @@ wp-content/plugins/*
 wp-content/themes/*
 !wp-content/themes/depot/
 !wp-content/themes/depot-child/
+
+# Ignore node codes (e.g. bin, package.json)
+!package.json
+!package-lock.json
+!le
