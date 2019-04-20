@@ -126,7 +126,7 @@ function wp_le_woocommerce_dropdown_variation_attribute_options_html( $html, $ar
 
   return $html;
 }
-add_filter( 'woocommerce_dropdown_variation_attribute_options_html', 'wp_le_woocommerce_dropdown_variation_attribute_options_html', 12, 2 );
+add_filter( 'woocommerce_dropdown_variation_attribute_options_html', 'wp_le_woocommerce_dropdown_variation_attribute_options_html', 99, 2 );
 
 // Returns the default variation option. If not set, choose the first variation id
 function wp_le_woocommerce_product_get_default_attributes( $defaults ) {
@@ -148,8 +148,12 @@ function wp_le_woocommerce_product_get_default_attributes( $defaults ) {
     return $defaults;
   }
 
+  // Sorts all child product variation ids, PHP copies array by default
+  $children = $product->get_children();
+  sort($children);
+
   // Gets the first child product variation (if any)
-  $variation = wc_get_product( $product->get_children()[0] );
+  $variation = wc_get_product( $children[0] );
   if ( empty( $variation ) ) {
     return $defaults;
   }
@@ -161,16 +165,13 @@ function wp_le_woocommerce_product_get_default_attributes( $defaults ) {
   }
   return $defaults;
 }
-add_filter( 'woocommerce_product_get_default_attributes', 'wp_le_woocommerce_product_get_default_attributes', 10, 1 );
+add_filter( 'woocommerce_product_get_default_attributes', 'wp_le_woocommerce_product_get_default_attributes', 99, 1 );
 
 // Remove the Clear selection link.
-function hpy_fdv_remove_clear_text( $value ) {
-
-    $value = "";
-    return $value;
-
+function wp_le_woocommerce_reset_variations_link( $value ) {
+  return '';
 }
-add_filter( 'woocommerce_reset_variations_link', 'hpy_fdv_remove_clear_text', 10, 1 );
+add_filter( 'woocommerce_reset_variations_link', 'wp_le_woocommerce_reset_variations_link', 99, 1 );
 //====================================================
 // Remove default unselect variation option
 //====================================================
