@@ -231,8 +231,6 @@ global $wp, $WCFM, $wc_product_attributes;
 						</p>
 						<?php
 
-							wp_le_console_log_var( $variations );
-
 						 $WCFM->wcfm_fields->wcfm_generate_form_field( array(
 								"variations" => array(
 									'type' => 'multiinput',
