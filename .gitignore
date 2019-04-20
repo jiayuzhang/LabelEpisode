@@ -14,7 +14,7 @@ wp-content/*
 # Ignore everything in the "plugins" directory, except the plugins you specify
 wp-content/plugins/*
 !wp-content/plugins/wc-frontend-manager/
-# !wp-content/plugins/my-directory-plugin/
+!wp-content/plugins/woo-variation-gallery/
 
 # Ignore everything in the "themes" directory, except the themes you specify
 wp-content/themes/*
