@@ -196,10 +196,10 @@ function wp_le_wcfm_pm_block_class_attributes($classes) {
  * Removes the specified $classNameToRemove from the classString.
  * e.g. classString = 'abc def ghi', classNameToRemove = def, result = 'abc ghi'
  *
- * @param $classString The string containing the all the classes
- * @param $classNameToRemove The class to be removed.
+ * @param string $classString The string containing the all the classes
+ * @param string $classNameToRemove The class to be removed.
  *
- * @return The updated class string with the specified name removed.
+ * @return string The updated class string with the specified name removed.
  */
 function removeCssClass($classString, $classNameToRemove) {
   $chunk = preg_split('/\s/', $classString);
@@ -215,12 +215,13 @@ function removeCssClass($classString, $classNameToRemove) {
 
 add_filter('wc_product_has_unique_sku', 'wp_le_wc_product_has_unique_sku', 20, 1);
 
+
 /**
- * Returns false to indicate product is unique.
- *
- * @return bool Always return false
+ * @return bool True if there's an existing SKU for the new product.
  */
-function wp_le_wc_product_has_unique_sku() {
+function wp_le_wc_product_has_unique_sku($sku_found) {
+  // Returns false to make the system think product has unique sku - no conflict with existing SKU.
+  // This is to skip the uniqueness checks/validations.
   return false;
 }
 
