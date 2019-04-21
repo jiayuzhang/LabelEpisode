@@ -179,6 +179,51 @@ add_filter('woocommerce_reset_variations_link', 'wp_le_woocommerce_reset_variati
 // Remove default unselect variation option
 //====================================================
 
+/** Remove inventory tab from variable product. */
+add_filter('wcfm_pm_block_class_stock', 'wp_le_wcfm_pm_block_class_stock', 20, 1);
+function wp_le_wcfm_pm_block_class_stock($classes) {
+  return removeCssClass($classes, 'variable');
+}
+
+/** Remove attribute tab from simple product. */
+add_filter('wcfm_pm_block_class_attributes', 'wp_le_wcfm_pm_block_class_attributes', 20,
+    1);
+function wp_le_wcfm_pm_block_class_attributes($classes) {
+  return removeCssClass($classes, 'simple');
+}
+
+/**
+ * Removes the specified $classNameToRemove from the classString.
+ * e.g. classString = 'abc def ghi', classNameToRemove = def, result = 'abc ghi'
+ *
+ * @param $classString The string containing the all the classes
+ * @param $classNameToRemove The class to be removed.
+ *
+ * @return The updated class string with the specified name removed.
+ */
+function removeCssClass($classString, $classNameToRemove) {
+  $chunk = preg_split('/\s/', $classString);
+  $chunk = array_filter($chunk, function ($element) use ($classNameToRemove) {
+    if ($element == $classNameToRemove) {
+      return false;
+    }
+    return true;
+  });
+
+  return implode(' ', $chunk);
+}
+
+add_filter('wc_product_has_unique_sku', 'wp_le_wc_product_has_unique_sku', 20, 1);
+
+/**
+ * Returns false to indicate product is unique.
+ *
+ * @return bool Always return false
+ */
+function wp_le_wc_product_has_unique_sku() {
+  return false;
+}
+
 function wp_le_console_log_var($var) {
   wp_le_console_log(print_r($var, true));
 }
