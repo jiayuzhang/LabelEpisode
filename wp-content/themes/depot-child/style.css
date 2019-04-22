@@ -163,4 +163,22 @@ Hide vendor edit button*/
   padding-left: 0;
 }
 
+/* Add order note */
+#wp_le_wcfm_order_notes li {
+  list-style: none;
+  margin: 5px 0;
+}
 
+#le_wcfm_add_note textarea {
+  font-size: 15px;
+  width: 100%;
+}
+
+#le_wcfm_add_note .le-wcfm-add-note-button {
+  float: none !important;
+  margin: 0 !important;
+}
+
+.le-wcfm-note-content {
+  color: black;
+}
