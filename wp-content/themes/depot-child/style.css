@@ -182,3 +182,30 @@ Hide vendor edit button*/
 .le-wcfm-note-content {
   color: black;
 }
+
+/* Fix vendor registration form glitch */
+#wcfm_membership_registration_form p.wcfm_title,
+#wcfm_membership_registration_form span.wcfm_title {
+  display: block !important;
+}
+
+#wcfm_membership_registration_form span.select2.select2-container {
+  float: none !important;
+}
+
+#wcfm_membership_registration_form .select2-selection__arrow:before {
+  content: '' !important;
+}
+
+#wcfm_membership_registration_form .select2-selection__arrow b {
+  display: block !important;
+}
+
+#wcfm_membership_registration_form input#terms {
+  display: block !important;
+  margin-left: 0 !important;
+}
+
+#wcfm-main-contentainer .wcfm_membership_thankyou_content_wrapper {
+  background: none !important;
+}
