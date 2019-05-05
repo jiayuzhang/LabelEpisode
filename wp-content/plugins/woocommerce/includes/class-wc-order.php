@@ -72,6 +72,7 @@ class WC_Order extends WC_Abstract_Order {
           'postcode' => '',
           'country' => '',
       ),
+      'shipping_status' => '',
       'payment_method' => '',
       'payment_method_title' => '',
       'transaction_id' => '',
@@ -788,6 +789,20 @@ class WC_Order extends WC_Abstract_Order {
   }
 
   /**
+   * Get the shipping status of the order.
+   * pending
+   * shipped_to_admin
+   * shipped_to_customer
+   *
+   * @param string $context Valid values are view and edit.
+   *
+   * @return string
+   */
+  public function get_shipping_status($context = 'view') {
+    return $this->get_prop('shipping_status', $context);
+  }
+
+  /**
    * Get transaction d.
    *
    * @param string $context What the value is for. Valid values are view and edit.
@@ -1288,6 +1303,10 @@ class WC_Order extends WC_Abstract_Order {
    */
   public function set_shipping_country($value) {
     $this->set_address_prop('country', 'shipping', $value);
+  }
+
+  public function set_shipping_status($value) {
+    $this->set_prop('shipping_status', $value);
   }
 
   /**

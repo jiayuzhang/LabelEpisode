@@ -372,6 +372,7 @@ class WC_Checkout {
       $order->set_discount_tax(WC()->cart->get_discount_tax());
       $order->set_cart_tax(WC()->cart->get_cart_contents_tax() + WC()->cart->get_fee_tax());
       $order->set_shipping_tax(WC()->cart->get_shipping_tax());
+      $order->set_shipping_status('pending');
       $order->set_total(WC()->cart->get_total('edit'));
       $this->create_order_line_items($order, WC()->cart);
       $this->create_order_fee_lines($order, WC()->cart);
