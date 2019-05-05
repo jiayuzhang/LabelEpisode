@@ -267,13 +267,13 @@ class WCFM_Library {
             array('jquery', 'dataTables_js'), $WCFM->version, true);
 
         // Order Columns Defs
-        $wcfm_datatable_column_defs = '[{ "targets": 0, "orderable" : false }, { "targets": 1, "orderable" : false }, { "targets": 2, "orderable" : false }, { "targets": 3, "orderable" : false }, { "targets": 4, "orderable" : false },{ "targets": 5, "orderable" : false },{ "targets": 6, "orderable" : false },{ "targets": 7, "orderable" : false },{ "targets": 8, "orderable" : false },{ "targets": 9, "orderable" : false },{ "targets": 10, "orderable" : false },{ "targets": 11, "orderable" : false },{ "targets": 12, "orderable" : false }]';
+        $wcfm_datatable_column_defs = '[{ "targets": 0, "orderable" : false }, { "targets": 1, "orderable" : false }, { "targets": 2, "orderable" : false }, { "targets": 3, "orderable" : false }, { "targets": 4, "orderable" : false },{ "targets": 5, "orderable" : false },{ "targets": 6, "orderable" : false },{ "targets": 7, "orderable" : false },{ "targets": 8, "orderable" : false },{ "targets": 9, "orderable" : false },{ "targets": 10, "orderable" : false },{ "targets": 11, "orderable" : false },{ "targets": 12, "orderable" : false },{ "targets": 13, "orderable" : false }]';
 
         $wcfm_datatable_column_defs = apply_filters('wcfm_datatable_column_defs',
             $wcfm_datatable_column_defs, 'order');
 
         // Order Columns Priority
-        $wcfm_datatable_column_priority = '[{ "responsivePriority": 2 },{ "responsivePriority": 1 },{ "responsivePriority": 4 },{ "responsivePriority": 10 },{ "responsivePriority": 6 },{ "responsivePriority": 5 },{ "responsivePriority": 7 },{ "responsivePriority": 11 },{ "responsivePriority": 3 },{ "responsivePriority": 12 },{ "responsivePriority": 8 },{ "responsivePriority": 9 },{ "responsivePriority": 1 }]';
+        $wcfm_datatable_column_priority = '[{ "responsivePriority": 3 },{ "responsivePriority": 1 },{ "responsivePriority": 4 },{ "responsivePriority": 10 },{ "responsivePriority": 6 },{ "responsivePriority": 5 },{ "responsivePriority": 7 },{ "responsivePriority": 11 },{ "responsivePriority": 3 },{ "responsivePriority": 12 },{ "responsivePriority": 8 },{ "responsivePriority": 9 },{ "responsivePriority": 2 },{ "responsivePriority": 1 }]';
         $wcfm_datatable_column_priority = apply_filters('wcfm_datatable_column_priority',
             $wcfm_datatable_column_priority, 'order');
 
@@ -293,29 +293,30 @@ class WCFM_Library {
         if (wcfm_is_vendor()) {
           $wcfm_screen_manager_data = $wcfm_screen_manager_data['vendor'];
           if (!apply_filters('wcfm_allow_customer_billing_details', true)) {
-            $wcfm_screen_manager_data[4] = 'yes';
+            $wcfm_screen_manager_data[5] = 'yes';
           }
           if (!apply_filters('wcfm_allow_customer_shipping_details', true)) {
-            $wcfm_screen_manager_data[5] = 'yes';
+            $wcfm_screen_manager_data[6] = 'yes';
           }
         } else {
           $wcfm_screen_manager_data = $wcfm_screen_manager_data['admin'];
         }
         if (!$WCFM->is_marketplace || !apply_filters('wcfm_is_allow_view_commission', true)) {
-          $wcfm_screen_manager_data[8] = 'yes';
+          $wcfm_screen_manager_data[9] = 'yes';
         }
         if (apply_filters('wcfm_orders_additonal_data_hidden', true)) {
-          $wcfm_screen_manager_data[10] = 'yes';
+          $wcfm_screen_manager_data[11] = 'yes';
         }
         $wcfm_screen_manager_data = apply_filters('wcfm_screen_manager_data_columns',
             $wcfm_screen_manager_data);
         wp_localize_script('wcfm_orders_js', 'wcfm_orders_screen_manage',
             $wcfm_screen_manager_data);
 
+        // Hide columns not visible to vendors.
         $wcfm_screen_manager_hidden_data = array();
-        $wcfm_screen_manager_hidden_data[3] = 'yes';
-        $wcfm_screen_manager_hidden_data[7] = 'yes';
-        $wcfm_screen_manager_hidden_data[9] = 'yes';
+        $wcfm_screen_manager_hidden_data[4] = 'yes';
+        $wcfm_screen_manager_hidden_data[8] = 'yes';
+        $wcfm_screen_manager_hidden_data[10] = 'yes';
         $wcfm_screen_manager_hidden_data = apply_filters('wcfm_screen_manager_hidden_columns',
             $wcfm_screen_manager_hidden_data);
         wp_localize_script('wcfm_orders_js', 'wcfm_orders_screen_manage_hidden',

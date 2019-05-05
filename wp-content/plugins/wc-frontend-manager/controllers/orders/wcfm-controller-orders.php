@@ -135,6 +135,11 @@ class WCFM_Orders_Controller {
             . sanitize_title($the_order->get_status()) . ' text_tip" data-tip="'
             . wc_get_order_status_name($the_order->get_status()) . '"></span>', $the_order);
 
+        // Shipping status
+        $wcfm_orders_json_arr[$index][] = '<span>'
+            . $the_order->get_shipping_status_name()
+            . '</span>';
+
         // Custom Column Support After
         $wcfm_orders_json_arr = apply_filters('wcfm_orders_custom_columns_data_after',
             $wcfm_orders_json_arr, $index, $wcfm_orders_single->ID, $wcfm_orders_single,

@@ -23,6 +23,13 @@ class WC_Order extends WC_Abstract_Order {
   protected $status_transition = false;
 
   /**
+   * Stores data about shipping status changes so relevant hooks can be fired.
+   *
+   * @var bool|array
+   */
+  protected $shipping_status_transition = false;
+
+  /**
    * Order Data array. This is the core order data exposed in APIs since 3.0.0.
    *
    * @since 3.0.0
@@ -360,6 +367,41 @@ class WC_Order extends WC_Abstract_Order {
           )
       );
       $this->add_order_note(__('Update status event failed.', 'woocommerce') . ' '
+          . $e->getMessage());
+
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Updates shipping status of order immediately.
+   *
+   * @param string $new_shipping_status Status to change the order to. No internal wc- prefix is
+   *     required.
+   * @param string $note Optional note to add.
+   *
+   * @return bool
+   * @uses WC_Order::set_status()
+   */
+  public function update_shipping_status($new_shipping_status, $note = '') {
+    if (!$this->get_id()) { // Order must exist.
+      return false;
+    }
+
+    try {
+      $this->set_shipping_status($new_shipping_status, $note);
+      $this->save();
+    } catch (Exception $e) {
+      $logger = wc_get_logger();
+      $logger->error(
+          sprintf('Error updating shipping status for order #%d', $this->get_id()), array(
+              'order' => $this,
+              'error' => $e,
+          )
+      );
+      $this->add_order_note(__('Update shippping status event failed.', 'woocommerce') . ' '
           . $e->getMessage());
 
       return false;
@@ -789,17 +831,27 @@ class WC_Order extends WC_Abstract_Order {
   }
 
   /**
-   * Get the shipping status of the order.
-   * pending
-   * shipped_to_admin
-   * shipped_to_customer
+   * Get the shipping status of the order. Default is pending.
    *
    * @param string $context Valid values are view and edit.
    *
    * @return string
    */
   public function get_shipping_status($context = 'view') {
-    return $this->get_prop('shipping_status', $context);
+    $shipping_status = $this->get_prop('shipping_status', $context);
+    return empty($shipping_status) ? 'pending' : $shipping_status;
+  }
+
+  /**
+   * Get the shipping status of the order.
+   * pending
+   * shipped_to_admin
+   * shipped_to_customer
+   *
+   * @return string
+   */
+  public function get_shipping_status_name() {
+    return $this->get_valid_shipping_statuses()[$this->get_shipping_status()];
   }
 
   /**
@@ -1305,8 +1357,33 @@ class WC_Order extends WC_Abstract_Order {
     $this->set_address_prop('country', 'shipping', $value);
   }
 
-  public function set_shipping_status($value) {
+  public function set_shipping_status($value, $note = '') {
+    if (!empty($value) && !in_array($value, array_keys($this->get_valid_shipping_statuses()))) {
+      throw new Exception ('Invalid shipping status: ' + $value);
+    }
+
+    $old_value = $this->get_shipping_status();
     $this->set_prop('shipping_status', $value);
+
+    // Handle shipping status transition.
+    if ($old_value != $value && $this->object_read === true) {
+      $this->shipping_status_transition = array(
+          'from' => $old_value,
+          'to' => $value,
+          'note' => $note,
+      );
+    }
+  }
+
+  /** The list of valid shipping statuses. */
+  public function get_valid_shipping_statuses() {
+    return array(
+        'pending' => _x('Pending', 'Shipping status for not yet shipped', 'LE'),
+        'shipped_to_admin' => _x('Shipped to admin', 'Shipping status for shipped to admin', 'LE'),
+        'shipped_to_customer' => _x('Shipped to customer',
+            'Shipping status for shipped to customer', 'LE'),
+        'delivered' => _x('Delivered', 'Shipping status for delivered to customer', 'LE'),
+    );
   }
 
   /**

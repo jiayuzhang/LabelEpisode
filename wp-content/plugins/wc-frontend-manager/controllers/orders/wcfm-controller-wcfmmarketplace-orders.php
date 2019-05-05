@@ -223,6 +223,11 @@ class WCFM_Orders_WCFMMarketplace_Controller {
               . '"></span>', $the_order);
         }
 
+        // Shipping status
+        $wcfm_orders_json_arr[$index][] = '<span>'
+            . $the_order->get_shipping_status_name()
+            . '</span>';
+
         // Custom Column Support After
         $wcfm_orders_json_arr = apply_filters('wcfm_orders_custom_columns_data_after',
             $wcfm_orders_json_arr, $index, $order->ID, $order, $the_order);
@@ -452,6 +457,15 @@ class WCFM_Orders_WCFMMarketplace_Controller {
             $actions = '<a class="wcfm_order_mark_complete wcfm-action-icon" href="#" data-orderid="'
                 . $order->order_id . '"><span class="wcfmfa fa-check-circle text_tip" data-tip="'
                 . esc_attr__('Mark as Complete', 'wc-frontend-manager') . '"></span></a>';
+        }
+
+        // Show 'Mark as shipped' action to vendors.
+        if (wcfm_is_vendor()
+            && ($the_order->get_shipping_status() == 'pending'
+                || empty($the_order->get_shipping_status()))) {
+          $actions .= '<a class="wcfm_order_mark_shipped wcfm-action-icon" href="#" data-orderid="'
+              . $order->order_id . '"><span class="wcfmfa wcicon-truck-1 text_tip" data-tip="'
+              . esc_attr__('Mark as shipped', 'wc-frontend-manager') . '"></span></a>';
         }
 
         if ($can_view_orders)

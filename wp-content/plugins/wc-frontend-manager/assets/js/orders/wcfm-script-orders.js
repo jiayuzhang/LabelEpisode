@@ -173,6 +173,45 @@ jQuery(document).ready(function($) {
 			}
 		});
 	}
+
+	// Mark Order as shipped to admin.
+	$( document.body ).on( 'updated_wcfm-orders', function() {
+		$('.wcfm_order_mark_shipped').each(function() {
+			$(this).click(function(event) {
+				event.preventDefault();
+				var rconfirm = confirm( wcfm_dashboard_messages.order_mark_shipped_confirm );
+				if(rconfirm) markShippedWCFMOrder($(this));
+				return false;
+			});
+		});
+	});
+
+	function markShippedWCFMOrder(item) {
+		clearTimeout(orderTableRefrsherTime);
+		$('#wcfm-orders_wrapper').block({
+			message: null,
+			overlayCSS: {
+				background: '#fff',
+				opacity: 0.6
+			}
+		});
+		var data = {
+			action : 'wcfm_order_mark_shipped',
+			orderid : item.data('orderid'),
+			shipped_to : 'admin',
+            tracking : '',
+		}
+		$.ajax({
+			type:		'POST',
+			url: wcfm_params.ajax_url,
+			data: data,
+			success:	function(response) {
+				$wcfm_orders_table.ajax.reload();
+				$('#wcfm-orders_wrapper').unblock();
+				orderTableRefrsher();
+			}
+		});
+	}
 	
 	// Screen Manager
 	$( document.body ).on( 'updated_wcfm-orders', function() {

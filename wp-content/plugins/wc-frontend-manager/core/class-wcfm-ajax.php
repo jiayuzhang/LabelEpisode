@@ -36,6 +36,10 @@ class WCFM_Ajax {
     // Order Mark as Complete
     add_action('wp_ajax_wcfm_order_mark_complete', array(&$this, 'wcfm_order_mark_complete'));
 
+    // Order Mark as shipped.
+    add_action('wp_ajax_wcfm_order_mark_shipped', array(&$this, 'wcfm_order_mark_shipped'));
+
+
     // Order Status Update
     add_action('wp_ajax_wcfm_modify_order_status', array(&$this, 'wcfm_modify_order_status'));
 
@@ -552,6 +556,46 @@ class WCFM_Ajax {
     }
 
     echo 'sucess';
+    die;
+  }
+
+  /**
+   * Handle Order status update
+   */
+  public function wcfm_order_mark_shipped() {
+    global $WCFM;
+
+    $order_id = $_POST['orderid'];
+    $shipped_to = $_POST['shipped_to'];
+    $tracking = $_POST['tracking_info'];
+
+    if ($order_id && $shipped_to) {
+      $order = wc_get_order($order_id);
+      $shipping_status = $shipped_to === 'admin' ? 'shipped_to_admin' : 'shipped_to_customer';
+      $order->update_shipping_status($shipping_status, $tracking);
+
+      // Add Order Note for Log
+      $user_id = apply_filters('wcfm_current_vendor_id', get_current_user_id());
+      $shop_name = get_user_by('ID', $user_id)->display_name;
+      if (wcfm_is_vendor()) {
+        $shop_name = $WCFM->wcfm_vendor_support->wcfm_get_vendor_store_by_vendor(absint($user_id));
+      }
+      $wcfm_messages = sprintf(
+          __('<b>%s</b> order shipping status updated to <b>%s</b> by <b>%s</b>',
+              'wc-frontend-manager'),
+          '#<a target="_blank" class="wcfm_dashboard_item_title" href="'
+          . get_wcfm_view_order_url($order_id) . '">' . $order->get_order_number() . '</a>',
+          $order->get_shipping_status_name(),
+          $shop_name);
+      $is_customer_note = apply_filters('wcfm_is_allow_order_update_note_for_customer', '1');
+      $comment_id = $order->add_order_note($wcfm_messages, $is_customer_note);
+      if (wcfm_is_vendor()) {
+        add_comment_meta($comment_id, '_vendor_id', $user_id);
+      }
+
+      $WCFM->wcfm_notification->wcfm_send_direct_message(-2, 0, 1, 0, $wcfm_messages,
+          'status-update');
+    }
     die;
   }
 
