@@ -25,6 +25,7 @@ wp-content/plugins/woocommerce/*
 wp-content/plugins/woocommerce/includes/*
 !wp-content/plugins/woocommerce/includes/data-stores/
 !wp-content/plugins/woocommerce/includes/class-wc-order.php
+!wp-content/plugins/woocommerce/includes/class-wc-checkout.php
 
 # Ignore everything in the "woocommerce/includes/datastores" directory, except the specific paths
 wp-content/plugins/woocommerce/includes/data-stores/*
