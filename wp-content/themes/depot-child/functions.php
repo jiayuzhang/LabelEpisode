@@ -383,7 +383,7 @@ function wp_le_render_order_note($note) {
 
 
 //====================================================
-// Remove "virtual", "downloadable" from WCFM add product
+// Remove "virtual", "downloadable", "schedule" from WCFM add product
 //====================================================
 add_filter('wcfm_product_manage_fields_general', 'wp_le_wcfm_product_manage_fields_general', 99, 1);
 function wp_le_wcfm_product_manage_fields_general($general_fields) {
@@ -391,6 +391,13 @@ function wp_le_wcfm_product_manage_fields_general($general_fields) {
   unset($general_fields['is_downloadable']);
   return $general_fields;
 }
+
+add_filter('wcfm_product_manage_fields_pricing', 'wp_le_wcfm_product_manage_fields_pricing', 99, 1);
+function wp_le_wcfm_product_manage_fields_pricing($fields) {
+  unset($fields['sale_price']['desc']);
+  return $fields;
+}
 //====================================================
-// End of Remove "virtual", "downloadable" from WCFM add product
+// End of Remove "virtual", "downloadable", "schedule" from WCFM add product
 //====================================================
+
