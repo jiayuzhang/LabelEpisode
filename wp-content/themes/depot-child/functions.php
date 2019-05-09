@@ -380,3 +380,17 @@ function wp_le_render_order_note($note) {
 //====================================================
 // End of Add "Order notes" in WCFM order details view
 //====================================================
+
+
+//====================================================
+// Remove "virtual", "downloadable" from WCFM add product
+//====================================================
+add_filter('wcfm_product_manage_fields_general', 'wp_le_wcfm_product_manage_fields_general', 99, 1);
+function wp_le_wcfm_product_manage_fields_general($general_fields) {
+  unset($general_fields['is_virtual']);
+  unset($general_fields['is_downloadable']);
+  return $general_fields;
+}
+//====================================================
+// End of Remove "virtual", "downloadable" from WCFM add product
+//====================================================
