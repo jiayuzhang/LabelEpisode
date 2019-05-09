@@ -55,6 +55,7 @@ add_filter('wcfm_variation_edit_data', 'wp_le_wcfm_variation_edit_data', 99, 3);
 
 // Add additional gallery into the variations form on manage-product page
 function wp_le_wcfm_product_manage_fields_variations($options, $variations) {
+  unset($options['is_virtual']);
   // Variation additional gallery (exclude variation featured image)
   // To preserve the display order of options in a form, add a new option
   // `gallery_images` right after `image` (The variation featured image)
@@ -104,6 +105,10 @@ function wp_le_after_wcfm_product_variation_meta_save($new_product_id, $variatio
 add_action('after_wcfm_product_variation_meta_save',
     'wp_le_after_wcfm_product_variation_meta_save', 99, 3);
 
+add_filter('wcfmu_is_allow_virtual', 'wp_le_wcfmu_is_allow_virtual', 99);
+function wp_le_wcfmu_is_allow_virtual() {
+  return false;
+}
 //====================================================
 // End of Integration woo-variation-gallery and wc-frontend-manager
 //====================================================
