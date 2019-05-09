@@ -383,7 +383,7 @@ function wp_le_render_order_note($note) {
 
 
 //====================================================
-// Remove "virtual", "downloadable", "schedule", DRAFT from WCFM add product
+// Disable "virtual", "downloadable", "schedule", DRAFT, "Add attributes" from WCFM add product
 //====================================================
 add_filter('wcfm_product_manage_fields_general', 'wp_le_wcfm_product_manage_fields_general', 99, 1);
 function wp_le_wcfm_product_manage_fields_general($general_fields) {
@@ -402,7 +402,12 @@ add_filter('wcfm_is_allow_draft_published_products', 'wp_le_wcfm_is_allow_draft_
 function wp_le_wcfm_is_allow_draft_published_products() {
   return false;
 }
+
+add_filter('wcfm_is_allow_add_attribute', 'wp_le_wcfm_is_allow_add_attribute', 99);
+function wp_le_wcfm_is_allow_add_attribute() {
+  return false;
+}
 //====================================================
-// End of Remove "virtual", "downloadable", "schedule" from WCFM add product
+// End of Disable "virtual", "downloadable", "schedule", DRAFT, "Add attributes" from WCFM add product
 //====================================================
 
