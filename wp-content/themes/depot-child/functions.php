@@ -55,6 +55,7 @@ add_filter('wcfm_variation_edit_data', 'wp_le_wcfm_variation_edit_data', 99, 3);
 
 // Add additional gallery into the variations form on manage-product page
 function wp_le_wcfm_product_manage_fields_variations($options, $variations) {
+  unset($options['is_virtual']);
   // Variation additional gallery (exclude variation featured image)
   // To preserve the display order of options in a form, add a new option
   // `gallery_images` right after `image` (The variation featured image)
@@ -104,6 +105,10 @@ function wp_le_after_wcfm_product_variation_meta_save($new_product_id, $variatio
 add_action('after_wcfm_product_variation_meta_save',
     'wp_le_after_wcfm_product_variation_meta_save', 99, 3);
 
+add_filter('wcfmu_is_allow_virtual', 'wp_le_wcfmu_is_allow_virtual', 99);
+function wp_le_wcfmu_is_allow_virtual() {
+  return false;
+}
 //====================================================
 // End of Integration woo-variation-gallery and wc-frontend-manager
 //====================================================
@@ -380,3 +385,34 @@ function wp_le_render_order_note($note) {
 //====================================================
 // End of Add "Order notes" in WCFM order details view
 //====================================================
+
+
+//====================================================
+// Disable "virtual", "downloadable", "schedule", DRAFT, "Add attributes" from WCFM add product
+//====================================================
+add_filter('wcfm_product_manage_fields_general', 'wp_le_wcfm_product_manage_fields_general', 99, 1);
+function wp_le_wcfm_product_manage_fields_general($general_fields) {
+  unset($general_fields['is_virtual']);
+  unset($general_fields['is_downloadable']);
+  return $general_fields;
+}
+
+add_filter('wcfm_product_manage_fields_pricing', 'wp_le_wcfm_product_manage_fields_pricing', 99, 1);
+function wp_le_wcfm_product_manage_fields_pricing($fields) {
+  unset($fields['sale_price']['desc']);
+  return $fields;
+}
+
+add_filter('wcfm_is_allow_draft_published_products', 'wp_le_wcfm_is_allow_draft_published_products', 99);
+function wp_le_wcfm_is_allow_draft_published_products() {
+  return false;
+}
+
+add_filter('wcfm_is_allow_add_attribute', 'wp_le_wcfm_is_allow_add_attribute', 99);
+function wp_le_wcfm_is_allow_add_attribute() {
+  return false;
+}
+//====================================================
+// End of Disable "virtual", "downloadable", "schedule", DRAFT, "Add attributes" from WCFM add product
+//====================================================
+

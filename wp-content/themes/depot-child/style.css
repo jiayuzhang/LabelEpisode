@@ -209,3 +209,12 @@ Hide vendor edit button*/
 #wcfm-main-contentainer .wcfm_membership_thankyou_content_wrapper {
   background: none !important;
 }
+
+/* Fix vendor add product page glitch */
+#wcfm_products_manage_form_general_expander .select2-container {
+  float: none !important;
+}
+
+#wcfm_products_manage_form_general_expander .select2-selection--multiple:after {
+  top: 20px !important;
+}
