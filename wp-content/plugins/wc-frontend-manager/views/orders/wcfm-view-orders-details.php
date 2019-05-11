@@ -198,12 +198,26 @@ do_action('before_wcfm_orders_details', $order_id);
             <div class="wcfm-container">
                 <div id="orders_details_general_expander" class="wcfm-content">
 
-                    <p class="form-field form-field-wide"><label
-                                for="order_date"><?php _e('Order date:',
-                            'wc-frontend-manager') ?></label>
+                    <p class="form-field form-field-wide">
+                        <label for="order_date">
+                          <?php _e('Order date:', 'wc-frontend-manager') ?></label>
                       <?php echo date_i18n(wc_date_format() . ' @' . wc_time_format(),
                           strtotime($post->post_date)); ?>
                     </p>
+
+                    <p class="form-field form-field-wide">
+                        <label for="shipping_status">
+                          <?php _e('Shipping status:', 'wc-frontend-manager') ?></label>
+                        <span class="shipping-status">
+                          <?php echo $order->get_shipping_status_name() ?>
+                        </span>
+                    </p>
+                  <?php if ($order->get_shipping_status() == 'pending') { ?>
+                      <button class="wcfm_order_mark_shipped button"
+                              data-orderid="<?php echo $order->get_id() ?>">
+                        <?php echo __('Mark order shipped', 'wc-frontend-manager') ?>
+                      </button>
+                  <?php } ?>
 
                   <?php if (apply_filters('wcfm_is_allow_order_status_update', true)) { ?>
                       <div id="wcfm_order_status_update_wrapper"
