@@ -1,4 +1,5 @@
 <?php
+require_once get_stylesheet_directory() . '/util.php';
 
 //====================================================
 // Enqueue scripts & styles
@@ -239,14 +240,6 @@ function wp_le_wc_product_has_unique_sku($sku_found) {
   return false;
 }
 
-function wp_le_console_log_var($var) {
-  wp_le_console_log(print_r($var, true));
-}
-
-function wp_le_console_log($message) {
-  echo "<script>console.log(`{$message}`)</script>";
-}
-
 //====================================================
 // Add "Order notes" in WCFM order details view
 //====================================================
@@ -385,7 +378,6 @@ function wp_le_render_order_note($note) {
 //====================================================
 // End of Add "Order notes" in WCFM order details view
 //====================================================
-
 
 //====================================================
 // Disable "virtual", "downloadable", "schedule", DRAFT, "Add attributes" from WCFM add product
