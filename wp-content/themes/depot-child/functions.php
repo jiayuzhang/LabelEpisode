@@ -447,3 +447,39 @@ function add_shipping_status_column_orders_page_content($column_name, $post_id) 
 
   }
 }
+
+// Admin tab shipping status filter.
+add_filter('restrict_manage_posts', 'add_shipping_status_filter_orders_page');
+function add_shipping_status_filter_orders_page() {
+  ?>
+    <select name="shipping-status-filter" id="shipping-status-filter">
+        <option value=''>
+          <?php esc_html_e('All shipping status', 'wc-frontend-manager'); ?></option>
+        <option value="pending">
+          <?php esc_html_e('Pending', 'wc-frontend-manager'); ?></option>
+        <option value="shipped_to_admin">
+          <?php esc_html_e('Shipped to admin', 'wc-frontend-manager'); ?></option>
+        <option value="shipped_to_customer">
+          <?php esc_html_e('Shipped to customer', 'wc-frontend-manager'); ?></option>
+    </select>
+  <?php
+}
+
+add_filter('request', 'shipping_status_query_request');
+function shipping_status_query_request($query_vars) {
+  if (!empty($_GET['shipping-status-filter'])) {
+    $shipping_status_query = array(
+        'key' => '_shipping_status',
+        'value' => $_GET['shipping-status-filter'],
+        'compare' => '=',
+    );
+
+    if (isset($query_vars['meta_query'])) {
+      $query_vars['meta_query'] = array_merge($query_vars['meta_query'], $shipping_status_query);
+    } else {
+      $query_vars['meta_query'] = array($shipping_status_query);
+    }
+  }
+
+  return $query_vars;
+}
