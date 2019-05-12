@@ -2,6 +2,7 @@ $wcfm_orders_table = '';
 $order_status = '';	
 $filter_by_date = '';
 $commission_status = '';
+$shipping_status = '';
 $delivery_boy = '';
 var orderTableRefrsherTime = '';
 
@@ -88,6 +89,7 @@ jQuery(document).ready(function($) {
 				d.filter_date_form  = $filter_date_form,
 				d.filter_date_to    = $filter_date_to,  
 				d.commission_status = $commission_status,
+				d.shipping_status = $shipping_status,
 				d.delivery_boy      = $delivery_boy
 			},
 			"complete" : function () {
@@ -116,7 +118,16 @@ jQuery(document).ready(function($) {
 			$wcfm_orders_table.ajax.reload();
 		});
 	}
-	
+
+	// Shipping status Filter
+	if( $('#shipping-status-filter').length > 0 ) {
+		$('#shipping-status-filter').on('change', function() {
+			$shipping_status = $('#shipping-status-filter').val();
+			$wcfm_orders_table.ajax.reload();
+		});
+	}
+
+
 	// Delivery Boy Filter
 	if( $('#wcfm_delivery_boy').length > 0 ) {
 		$('#wcfm_delivery_boy').on('change', function() {

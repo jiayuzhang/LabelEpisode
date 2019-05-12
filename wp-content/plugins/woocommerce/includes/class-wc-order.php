@@ -393,6 +393,8 @@ class WC_Order extends WC_Abstract_Order {
     try {
       $this->set_shipping_status($new_shipping_status, $note);
       $this->save();
+      do_action('woocommerce_le_order_shipping_status_change', $this->get_id(),
+          $new_shipping_status);
     } catch (Exception $e) {
       $logger = wc_get_logger();
       $logger->error(

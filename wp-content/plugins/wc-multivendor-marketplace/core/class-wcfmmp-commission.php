@@ -33,6 +33,11 @@ class WCFMmp_Commission {
     add_action('woocommerce_order_status_changed', array(&$this, 'wcfmmp_order_status_changed'), 30,
         4);
 
+    // Update Marketplace Order Shipping Status
+    add_action('woocommerce_le_order_shipping_status_change',
+        array(&$this, 'wcfmmp_order_shipping_status_changed'), 30,
+        4);
+
     // Withdrawal Status Completed
     add_action('wcfmmp_withdraw_status_completed_by_commission',
         array(&$this, 'wcfmmp_commission_withdrawal_id_update'), 10, 2);
@@ -75,7 +80,7 @@ class WCFMmp_Commission {
 
     $payment_method = !empty($order->get_payment_method()) ? $order->get_payment_method() : '';
     $order_status = $order->get_status();
-    $shipping_status = 'pending';
+    $shipping_status = $order->get_shipping_status();
     $is_withdrawable = 1;
     $is_auto_withdrawal = 0;
 
@@ -482,6 +487,19 @@ class WCFMmp_Commission {
       }
     }
     do_action('wcfmmp_order_status_updated', $order_id, $status_from, $status_to, $order);
+  }
+
+
+  /**
+   * Marketplace Order Shipping Status update.
+   */
+  function wcfmmp_order_shipping_status_changed($order_id, $status_to) {
+    global $wpdb;
+
+    // Update Order shipping status.
+    $wpdb->update("{$wpdb->prefix}wcfm_marketplace_orders",
+        array('shipping_status' => $status_to),
+        array('order_id' => $order_id), array('%s', '%s'), array('%d'));
   }
 
   /**

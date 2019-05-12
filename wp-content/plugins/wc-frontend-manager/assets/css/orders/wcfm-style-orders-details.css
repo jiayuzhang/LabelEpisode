@@ -198,7 +198,7 @@
 
 .wcfm_order_delivery_boy { display: inline-block; }
 
-#wcfm-main-contentainer #wcfm_add_order_note, #wcfm-main-contentainer #wcfm_modify_order_status {
+#wcfm-main-contentainer #wcfm_add_order_note, #wcfm-main-contentainer #wcfm_modify_order_status, #wcfm-main-contentainer .wcfm_order_mark_shipped {
 	float: right;
 	margin-top: 0px;
 	margin-left: 10px;
@@ -215,11 +215,12 @@
 	text-transform: uppercase;
 }
 
-#wcfm-main-contentainer #wcfm_add_order_note:hover, #wcfm-main-contentainer #wcfm_modify_order_status:hover {
+#wcfm-main-contentainer #wcfm_add_order_note:hover, #wcfm-main-contentainer #wcfm_modify_order_status:hover, #wcfm-main-contentainer .wcfm_order_mark_shipped:hover {
 	background: #17a2b8 none repeat scroll 0 0;
 }
 
-#wcfm-main-contentainer #wcfm_modify_order_status {
+#wcfm-main-contentainer #wcfm_modify_order_status,
+#wcfm-main-contentainer .wcfm_order_mark_shipped {
 	color: #ffffff !important;
 	float: none;
 	padding: 4px;

@@ -98,6 +98,11 @@ class WCFM_Orders_WCFMMarketplace_Controller {
         $status_filter = " AND `withdraw_status` = '{$commission_status}'";
       }
 
+      if (!empty($_POST['shipping_status'])) {
+        $shipping_status = esc_sql($_POST['shipping_status']);
+        $status_filter .= " AND `shipping_status` = '{$shipping_status}'";
+      }
+
       if (!empty($_POST['order_status'])) {
         $order_status = esc_sql($_POST['order_status']);
         if ($order_status != 'all') {
