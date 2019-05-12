@@ -261,6 +261,22 @@ class WC_Meta_Box_Order_Data {
 							</select>
 						</p>
 
+                        <p class="form-field form-field-wide wc-shipping-status">
+                            <label for="shipping_status">
+                              <?php
+                                _e( 'Shipping Status:', 'woocommerce' );
+                              ?>
+                            </label>
+                            <select id="shipping_status" name="shipping_status" class="wc-enhanced-select">
+                              <?php
+                              $shipping_statuses = $order->get_valid_shipping_statuses();
+                              foreach ( $shipping_statuses as $status => $status_name ) {
+                                echo '<option value="' . esc_attr( $status ) . '" ' . selected( $status, $order->get_shipping_status( 'edit' ), false ) . '>' . esc_html( $status_name ) . '</option>';
+                              }
+                              ?>
+                            </select>
+                        </p>
+
 						<p class="form-field form-field-wide wc-customer-user">
 							<!--email_off--> <!-- Disable CloudFlare email obfuscation -->
 							<label for="customer_user">
@@ -617,6 +633,7 @@ class WC_Meta_Box_Order_Data {
 		// Save order data.
 		$order->set_props( $props );
 		$order->set_status( wc_clean( $_POST['order_status'] ), '', true );
+		$order->set_shipping_status( wc_clean($_POST['shipping_status'] ), '');
 		$order->save();
 	}
 }

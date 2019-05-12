@@ -24,9 +24,15 @@ wp-content/plugins/woocommerce/*
 
 # Ignore everything in the "woocommerce/includes" directory, except the specific paths
 wp-content/plugins/woocommerce/includes/*
+!wp-content/plugins/woocommerce/includes/admin/
 !wp-content/plugins/woocommerce/includes/data-stores/
 !wp-content/plugins/woocommerce/includes/class-wc-order.php
 !wp-content/plugins/woocommerce/includes/class-wc-checkout.php
+
+wp-content/plugins/woocommerce/includes/admin/*
+!wp-content/plugins/woocommerce/includes/admin/meta-boxes/
+wp-content/plugins/woocommerce/includes/admin/meta-boxes/*
+!wp-content/plugins/woocommerce/includes/admin/meta-boxes/class-wc-meta-box-order-data.php
 
 # Ignore everything in the "woocommerce/includes/datastores" directory, except the specific paths
 wp-content/plugins/woocommerce/includes/data-stores/*
