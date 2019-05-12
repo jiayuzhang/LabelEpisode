@@ -263,11 +263,15 @@ if(!function_exists('depot_mikado_custom_breadcrumbs')) {
 
             $output .= '<div class="mkd-breadcrumbs"><div class="mkd-breadcrumbs-inner" itemprop="breadcrumb"><a itemprop="url" '.depot_mikado_get_inline_style($bread_style).' href="' . $homeLink . '">' . $home . '</a>' . $delimiter;
 
-            if ( is_category() || (depot_mikado_is_woocommerce_installed() && depot_mikado_is_product_category())) {
+            if ( is_category()) {
                 $thisCat = get_category(get_query_var('cat'), false);
                 if (isset($thisCat->parent) && $thisCat->parent != 0) $output .= get_category_parents($thisCat->parent, TRUE, ' ' . $delimiter);
                 $output .= $before . single_cat_title('', false) . $after;
-
+            } elseif (depot_mikado_is_woocommerce_installed() && depot_mikado_is_product_category()) {
+              $term = get_term_by('slug', get_query_var('product_cat'), 'product_cat');
+              $output .= get_term_parents_list(
+                $term->term_id, 'product_cat', array('separator' => $delimiter, 'inclusive' => false));
+              $output .= $before . single_cat_title('', false) . $after;
             } elseif (is_tax('portfolio-category')) {
                 $portfolio_category = wp_get_post_terms(get_the_ID(), 'portfolio-category');
                 $portfolio_category = $portfolio_category[0];
@@ -302,14 +306,15 @@ if(!function_exists('depot_mikado_custom_breadcrumbs')) {
 
             } elseif ( depot_mikado_is_woocommerce_installed() && is_singular('product') ){
                 $product = wc_get_product( get_the_ID() );
-                if(get_option('woocommerce_shop_page_id')){
-                    $output .= '<a itemprop="url" '. depot_mikado_get_inline_style($bread_style) .' href="' . get_permalink(get_option('woocommerce_shop_page_id')) . '">' . get_the_title(get_option('woocommerce_shop_page_id')) . '</a>' . $delimiter;
-                }
 
+                // Not show a shop entry (/shop), typically, we only show top-level category, e.g. "Home / Men / CLothing"
+                // if(get_option('woocommerce_shop_page_id')){
+                //     $output .= '<a itemprop="url" '. depot_mikado_get_inline_style($bread_style) .' href="' . get_permalink(get_option('woocommerce_shop_page_id')) . '">' . get_the_title(get_option('woocommerce_shop_page_id')) . '</a>' . $delimiter;
+                // }
 
                 if ( version_compare( WOOCOMMERCE_VERSION, '3.0' ) >= 0 ) {
                     if(!empty($product) && wc_get_product_category_list( $product->get_id())) {
-                        $output .= wc_get_product_category_list( $product->get_id(), ', ' ) . $delimiter;
+                        $output .= wc_get_product_category_list( $product->get_id(), $delimiter ) . $delimiter;
                     }
                 } else {
                     if(!empty($product) && $product->get_categories()) {

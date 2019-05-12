@@ -1,4 +1,5 @@
 <?php
+require_once get_stylesheet_directory() . '/util.php';
 
 //====================================================
 // Enqueue scripts & styles
@@ -25,13 +26,6 @@ function wp_le_depot_child_theme_admin_enqueue_scripts($hook) {
 // End of Enqueue scripts & styles
 //====================================================
 
-//Remove the additional information tab from the product page
-function wp_le_woocommerce_product_tabs($tabs) {
-  unset($tabs['additional_information']);
-  return $tabs;
-}
-
-add_filter('woocommerce_product_tabs', 'wp_le_woocommerce_product_tabs', 99);
 
 //====================================================
 // Integration woo-variation-gallery and wc-frontend-manager
@@ -241,14 +235,6 @@ function wp_le_wc_product_has_unique_sku($sku_found) {
   return false;
 }
 
-function wp_le_console_log_var($var) {
-  wp_le_console_log(print_r($var, true));
-}
-
-function wp_le_console_log($message) {
-  echo "<script>console.log(`{$message}`)</script>";
-}
-
 //====================================================
 // Add "Order notes" in WCFM order details view
 //====================================================
@@ -349,8 +335,8 @@ function wp_le_end_wcfm_orders_details($order_id) {
                       <textarea type="text" name="order_note" class="input-text" cols="20"
                                 rows="10"></textarea>
                       <button type="button"
-                              class="le-wcfm-add-note-button wcfm_add_attribute button"><?php _e('Add note',
-                            'woocommerce'); ?></button>
+                              class="le-wcfm-add-note-button wcfm_add_attribute button">
+                        <?php _e('Add note', 'woocommerce'); ?></button>
                   </li>
               <?php } else { ?>
                   <!-- Leave a message on store-manager page for Administrator -->
@@ -393,7 +379,6 @@ function wp_le_render_order_note($note) {
 // End of Add "Order notes" in WCFM order details view
 //====================================================
 
-
 //====================================================
 // Disable "virtual", "downloadable", "schedule", DRAFT, "Add attributes" from WCFM add product
 //====================================================
@@ -425,6 +410,23 @@ function wp_le_wcfm_is_allow_add_attribute() {
 // End of Disable "virtual", "downloadable", "schedule", DRAFT, "Add attributes" from WCFM add product
 //====================================================
 
+//====================================================
+// Customer site
+//====================================================
+
+// Override depot theme function be noop. Don't show e.g. -20% at top-left corner of product thumbnail in list page
+// function depot_mikado_woocommerce_sale_flash() {}
+
+//Remove the additional information tab from the product page
+add_filter('woocommerce_product_tabs', 'wp_le_woocommerce_product_tabs', 99);
+function wp_le_woocommerce_product_tabs($tabs) {
+  unset($tabs['additional_information']);
+  return $tabs;
+}
+//====================================================
+// End of Customer site
+//====================================================
+
 // Admin tab shipping status column
 add_filter('manage_edit-shop_order_columns', 'add_shipping_status_column_orders_page');
 add_action('manage_shop_order_posts_custom_column',
@@ -448,7 +450,7 @@ function add_shipping_status_column_orders_page_content($column_name, $post_id) 
   }
 }
 
-// Admin tab shipping status filter.
+// Admin order list shipping status filter.
 add_filter('restrict_manage_posts', 'add_shipping_status_filter_orders_page');
 function add_shipping_status_filter_orders_page() {
   ?>
@@ -465,6 +467,7 @@ function add_shipping_status_filter_orders_page() {
   <?php
 }
 
+// Admin order list shipping status query handling.
 add_filter('request', 'shipping_status_query_request');
 function shipping_status_query_request($query_vars) {
   if (!empty($_GET['shipping-status-filter'])) {
