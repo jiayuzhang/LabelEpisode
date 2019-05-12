@@ -416,3 +416,24 @@ function wp_le_wcfm_is_allow_add_attribute() {
 // End of Disable "virtual", "downloadable", "schedule", DRAFT, "Add attributes" from WCFM add product
 //====================================================
 
+// Admin tab shipping status column
+add_filter('manage_edit-shop_order_columns', 'add_shipping_status_column_orders_page');
+add_action('manage_shop_order_posts_custom_column', 'add_shipping_status_column_orders_page_content', 10, 2);
+
+function add_shipping_status_column_orders_page($posts_columns) {
+  $posts_columns['shipping-status'] = __('Shipping status',
+      'woocommerce-le-shipping-status');
+  return $posts_columns;
+}
+
+function add_shipping_status_column_orders_page_content($column_name, $post_id) {
+  if ('shipping-status' == $column_name && $post_id) {
+    $order = wc_get_order($post_id);
+    if ($order) {
+      echo '<div>';
+      echo $order->get_shipping_status_name();
+      echo '</div>';
+    }
+
+  }
+}
