@@ -959,6 +959,7 @@ if(!function_exists('get_wcfm_dashboard_messages')) {
 											"follower_delete_confirm"            => __( "Are you sure and want to delete this 'Follower'?\nYou can't undo this action ...", "wc-frontend-manager" ),
 											"following_delete_confirm"           => __( "Are you sure and want to delete this 'Following'?\nYou can't undo this action ...", "wc-frontend-manager" ),
 											"order_mark_complete_confirm"        => __( "Are you sure and want to 'Mark as Complete' this Order?", "wc-frontend-manager" ),
+                                            "order_mark_shipped_confirm"         => __( "Are you sure and want to 'Mark as Shipped' this Order?", "wc-frontend-manager" ),
 											"booking_mark_complete_confirm"      => __( "Are you sure and want to 'Mark as Confirmed' this Booking?", "wc-frontend-manager" ),
 											"appointment_mark_complete_confirm"  => __( "Are you sure and want to 'Mark as Complete' this Appointment?", "wc-frontend-manager" ),
 											"add_new"                            => __( "Add New", "wc-frontend-manager" ),

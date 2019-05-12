@@ -81,7 +81,8 @@ $admin_fee_mode = apply_filters( 'wcfm_is_admin_fee_mode', false );
 					<thead>
 						<tr>                                                                                      
 							<th><span class="wcicon-status-processing text_tip" data-tip="<?php _e( 'Status', 'wc-frontend-manager' ); ?>"></span></th>
-							<?php do_action( 'wcfm_order_columns_after' ); ?>
+                            <th><span class="wcicon-truck-1 text_tip" data-tip="<?php _e('Shipping', 'wc-frontend-manager'); ?>"></span></th>
+                            <?php do_action( 'wcfm_order_columns_after' ); ?>
 							<th><?php printf( apply_filters( 'wcfm_order_label', __( 'Order', 'wc-frontend-manager' ) ) ); ?></th>
 							<th><?php _e( 'Purchased', 'wc-frontend-manager' ); ?></th>
 							<th><?php _e( 'Quantity', 'wc-frontend-manager' ); ?></th>
@@ -112,7 +113,8 @@ $admin_fee_mode = apply_filters( 'wcfm_is_admin_fee_mode', false );
 					<tfoot>
 						<tr>
 							<th><span class="wcicon-status-processing text_tip" data-tip="<?php _e( 'Status', 'wc-frontend-manager' ); ?>"></span></th>
-							<?php do_action( 'wcfm_order_columns_after' ); ?>
+                            <th><span class="wcicon-truck-1 text_tip" data-tip="<?php _e('Shipping', 'wc-frontend-manager'); ?>"></span></th>
+                            <?php do_action( 'wcfm_order_columns_after' ); ?>
 							<th><?php printf( apply_filters( 'wcfm_order_label', __( 'Order', 'wc-frontend-manager' ) ) ); ?></th>
 							<th><?php _e( 'Purchased', 'wc-frontend-manager' ); ?></th>
 							<th><?php _e( 'Quantity', 'wc-frontend-manager' ); ?></th>
