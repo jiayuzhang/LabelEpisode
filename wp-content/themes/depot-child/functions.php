@@ -16,10 +16,11 @@ add_action('admin_enqueue_scripts', 'wp_le_depot_child_theme_admin_enqueue_scrip
 function wp_le_depot_child_theme_admin_enqueue_scripts($hook) {
   if ($hook === 'post.php') {
     wp_enqueue_script('wp-le-depot-child-theme-admin-script-post',
-      get_stylesheet_directory_uri() . '/assets/js/admin-post.js',
-      array('jquery'), false, true);
+        get_stylesheet_directory_uri() . '/assets/js/admin-post.js',
+        array('jquery'), false, true);
   }
 }
+
 //====================================================
 // End of Enqueue scripts & styles
 //====================================================
@@ -109,6 +110,7 @@ add_filter('wcfmu_is_allow_virtual', 'wp_le_wcfmu_is_allow_virtual', 99);
 function wp_le_wcfmu_is_allow_virtual() {
   return false;
 }
+
 //====================================================
 // End of Integration woo-variation-gallery and wc-frontend-manager
 //====================================================
@@ -255,14 +257,14 @@ function wp_le_after_wcfm_load_scripts($endpoint) {
   if ($endpoint === 'wcfm-orders-details') {
     global $wp;
     wp_enqueue_script('depot-mikado-child-wcfm-script',
-      get_stylesheet_directory_uri() . '/assets/js/wcfm-orders-details.js',
-      array('jquery', 'wcfm_core_js'), false, true);
+        get_stylesheet_directory_uri() . '/assets/js/wcfm-orders-details.js',
+        array('jquery', 'wcfm_core_js'), false, true);
     wp_localize_script('depot-mikado-child-wcfm-script', 'labelepisode_ajax',
-      array(
-        'ajax_url' => admin_url('admin-ajax.php'),
-        'order_id' => $wp->query_vars['orders-details'],
-        'security' => wp_create_nonce('labelepisode')
-      )
+        array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'order_id' => $wp->query_vars['orders-details'],
+            'security' => wp_create_nonce('labelepisode')
+        )
     );
   }
 }
@@ -272,7 +274,7 @@ function wp_le_ajax_vendor_add_order_notes() {
   check_ajax_referer('labelepisode', 'security');
 
   $order_id = absint($_POST['order_id']);
-  $note = wp_kses_post( trim(wp_unslash($_POST['note'])));
+  $note = wp_kses_post(trim(wp_unslash($_POST['note'])));
   if ($order_id > 0) {
     $order = wc_get_order($order_id);
     $comment_id = $order->add_order_note($note, false, false);
@@ -315,73 +317,78 @@ function wp_le_end_wcfm_orders_details($order_id) {
   if ($is_current_vendor) {
     $args['type'] = 'vendor';
     $args['meta_query'] = array(
-      array(
-        'key' => 'is_vendor_note',
-        'value' => 1,
-        'compare' => '='
-      )
+        array(
+            'key' => 'is_vendor_note',
+            'value' => 1,
+            'compare' => '='
+        )
     );
   }
   $notes = wc_get_order_notes($args);
   ?>
-  <div class="wcfm-clearfix"></div><br/>
-  <!-- collapsible -->
-  <div class="page_collapsible wc_dhl_shipping" id="wcfm_wc_dhl_shipping_options">
-    <?php _e('Order notes', 'wc-frontend-manager'); ?>
-  </div>
-  <div class="wcfm-container">
-    <div id="wp_le_wcfm_order_notes" class="wcfm-content">
-      <ul>
-      <?php
-      if (!empty($notes)) {
-        foreach ($notes as $note) {
-          wp_le_render_order_note($note);
-        }
-      } else {
-        echo '<li>' . __( 'There are no notes yet.', 'woocommerce' ) . '</li>';
-      }
-
-      if ($is_current_vendor) {
-      ?>
-        <li id="le_wcfm_add_note">
-          <textarea type="text" name="order_note" class="input-text" cols="20" rows="10"></textarea>
-          <button type="button" class="le-wcfm-add-note-button wcfm_add_attribute button"><?php _e( 'Add note', 'woocommerce' ); ?></button>
-        </li>
-      <?php } else { ?>
-        <!-- Leave a message on store-manager page for Administrator -->
-        <li>
-          <p>Administrator should manage order notes in admin panel.</p>
-        </li>
-      <?php } ?>
-      </ul>
+    <div class="wcfm-clearfix"></div><br/>
+    <!-- collapsible -->
+    <div class="page_collapsible wc_dhl_shipping" id="wcfm_wc_dhl_shipping_options">
+      <?php _e('Order notes', 'wc-frontend-manager'); ?>
     </div>
-  </div>
-  <!-- end collapsible -->
+    <div class="wcfm-container">
+        <div id="wp_le_wcfm_order_notes" class="wcfm-content">
+            <ul>
+              <?php
+              if (!empty($notes)) {
+                foreach ($notes as $note) {
+                  wp_le_render_order_note($note);
+                }
+              } else {
+                echo '<li>' . __('There are no notes yet.', 'woocommerce') . '</li>';
+              }
+
+              if ($is_current_vendor) {
+                ?>
+                  <li id="le_wcfm_add_note">
+                      <textarea type="text" name="order_note" class="input-text" cols="20"
+                                rows="10"></textarea>
+                      <button type="button"
+                              class="le-wcfm-add-note-button wcfm_add_attribute button"><?php _e('Add note',
+                            'woocommerce'); ?></button>
+                  </li>
+              <?php } else { ?>
+                  <!-- Leave a message on store-manager page for Administrator -->
+                  <li>
+                      <p>Administrator should manage order notes in admin panel.</p>
+                  </li>
+              <?php } ?>
+            </ul>
+        </div>
+    </div>
+    <!-- end collapsible -->
   <?php
 }
 
 function wp_le_render_order_note($note) {
-?>
-<li rel="<?php echo absint($note->id); ?>">
-  <div class="le-wcfm-note-content">
-    <?php echo wpautop(wptexturize(wp_kses_post($note->content))); ?>
-  </div>
-  <p class="meta">
-    <abbr class="exact-date" title="<?php echo $note->date_created->date('y-m-d h:i:s'); ?>">
-    <?php printf(__('added on %1$s at %2$s', 'woocommerce'),
-      $note->date_created->date_i18n(wc_date_format()),
-      $note->date_created->date_i18n(wc_time_format())); ?>
-    </abbr>
-    <?php
-    if ('system' !== $note->added_by) :
-      /* translators: %s: note author */
-      printf(' ' . __('by %s', 'woocommerce'), $note->added_by);
-    endif;
-    ?>
-  </p>
-</li>
-<?php
+  ?>
+    <li rel="<?php echo absint($note->id); ?>">
+        <div class="le-wcfm-note-content">
+          <?php echo wpautop(wptexturize(wp_kses_post($note->content))); ?>
+        </div>
+        <p class="meta">
+            <abbr class="exact-date"
+                  title="<?php echo $note->date_created->date('y-m-d h:i:s'); ?>">
+              <?php printf(__('added on %1$s at %2$s', 'woocommerce'),
+                  $note->date_created->date_i18n(wc_date_format()),
+                  $note->date_created->date_i18n(wc_time_format())); ?>
+            </abbr>
+          <?php
+          if ('system' !== $note->added_by) :
+            /* translators: %s: note author */
+            printf(' ' . __('by %s', 'woocommerce'), $note->added_by);
+          endif;
+          ?>
+        </p>
+    </li>
+  <?php
 }
+
 //====================================================
 // End of Add "Order notes" in WCFM order details view
 //====================================================
@@ -403,7 +410,8 @@ function wp_le_wcfm_product_manage_fields_pricing($fields) {
   return $fields;
 }
 
-add_filter('wcfm_is_allow_draft_published_products', 'wp_le_wcfm_is_allow_draft_published_products', 99);
+add_filter('wcfm_is_allow_draft_published_products', 'wp_le_wcfm_is_allow_draft_published_products',
+    99);
 function wp_le_wcfm_is_allow_draft_published_products() {
   return false;
 }
@@ -412,13 +420,15 @@ add_filter('wcfm_is_allow_add_attribute', 'wp_le_wcfm_is_allow_add_attribute', 9
 function wp_le_wcfm_is_allow_add_attribute() {
   return false;
 }
+
 //====================================================
 // End of Disable "virtual", "downloadable", "schedule", DRAFT, "Add attributes" from WCFM add product
 //====================================================
 
 // Admin tab shipping status column
 add_filter('manage_edit-shop_order_columns', 'add_shipping_status_column_orders_page');
-add_action('manage_shop_order_posts_custom_column', 'add_shipping_status_column_orders_page_content', 10, 2);
+add_action('manage_shop_order_posts_custom_column',
+    'add_shipping_status_column_orders_page_content', 10, 2);
 
 function add_shipping_status_column_orders_page($posts_columns) {
   $posts_columns['shipping-status'] = __('Shipping status',
