@@ -302,14 +302,15 @@ if(!function_exists('depot_mikado_custom_breadcrumbs')) {
 
             } elseif ( depot_mikado_is_woocommerce_installed() && is_singular('product') ){
                 $product = wc_get_product( get_the_ID() );
-                if(get_option('woocommerce_shop_page_id')){
-                    $output .= '<a itemprop="url" '. depot_mikado_get_inline_style($bread_style) .' href="' . get_permalink(get_option('woocommerce_shop_page_id')) . '">' . get_the_title(get_option('woocommerce_shop_page_id')) . '</a>' . $delimiter;
-                }
 
+                // Not show a shop entry (/shop), typically, we only show top-level category, e.g. "Home / Men / CLothing"
+                // if(get_option('woocommerce_shop_page_id')){
+                //     $output .= '<a itemprop="url" '. depot_mikado_get_inline_style($bread_style) .' href="' . get_permalink(get_option('woocommerce_shop_page_id')) . '">' . get_the_title(get_option('woocommerce_shop_page_id')) . '</a>' . $delimiter;
+                // }
 
                 if ( version_compare( WOOCOMMERCE_VERSION, '3.0' ) >= 0 ) {
                     if(!empty($product) && wc_get_product_category_list( $product->get_id())) {
-                        $output .= wc_get_product_category_list( $product->get_id(), ', ' ) . $delimiter;
+                        $output .= wc_get_product_category_list( $product->get_id(), $delimiter ) . $delimiter;
                     }
                 } else {
                     if(!empty($product) && $product->get_categories()) {
