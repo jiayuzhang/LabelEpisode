@@ -25,13 +25,6 @@ function wp_le_depot_child_theme_admin_enqueue_scripts($hook) {
 // End of Enqueue scripts & styles
 //====================================================
 
-//Remove the additional information tab from the product page
-function wp_le_woocommerce_product_tabs($tabs) {
-  unset($tabs['additional_information']);
-  return $tabs;
-}
-
-add_filter('woocommerce_product_tabs', 'wp_le_woocommerce_product_tabs', 99);
 
 //====================================================
 // Integration woo-variation-gallery and wc-frontend-manager
@@ -406,5 +399,23 @@ function wp_le_wcfm_is_allow_add_attribute() {
 }
 //====================================================
 // End of Disable "virtual", "downloadable", "schedule", DRAFT, "Add attributes" from WCFM add product
+//====================================================
+
+
+//====================================================
+// Customer site
+//====================================================
+
+// Override depot theme function be noop. Don't show e.g. -20% at top-left corner of product thumbnail in list page
+// function depot_mikado_woocommerce_sale_flash() {}
+
+//Remove the additional information tab from the product page
+add_filter('woocommerce_product_tabs', 'wp_le_woocommerce_product_tabs', 99);
+function wp_le_woocommerce_product_tabs($tabs) {
+  unset($tabs['additional_information']);
+  return $tabs;
+}
+//====================================================
+// End of Customer site
 //====================================================
 
