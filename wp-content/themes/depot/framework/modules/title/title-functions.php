@@ -268,9 +268,11 @@ if(!function_exists('depot_mikado_custom_breadcrumbs')) {
                 if (isset($thisCat->parent) && $thisCat->parent != 0) $output .= get_category_parents($thisCat->parent, TRUE, ' ' . $delimiter);
                 $output .= $before . single_cat_title('', false) . $after;
             } elseif (depot_mikado_is_woocommerce_installed() && depot_mikado_is_product_category()) {
-              $term = get_term_by('slug', get_query_var('product_cat'), 'product_cat');
+              global $wp_query;
+              //get current taxonomy and it's name and assign to title
+              $tax = $wp_query->get_queried_object();
               $output .= get_term_parents_list(
-                $term->term_id, 'product_cat', array('separator' => $delimiter, 'inclusive' => false));
+                $tax->term_id, 'product_cat', array('separator' => $delimiter, 'inclusive' => false));
               $output .= $before . single_cat_title('', false) . $after;
             } elseif (is_tax('portfolio-category')) {
                 $portfolio_category = wp_get_post_terms(get_the_ID(), 'portfolio-category');

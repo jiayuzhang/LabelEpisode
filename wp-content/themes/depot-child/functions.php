@@ -104,7 +104,6 @@ add_filter('wcfmu_is_allow_virtual', 'wp_le_wcfmu_is_allow_virtual', 99);
 function wp_le_wcfmu_is_allow_virtual() {
   return false;
 }
-
 //====================================================
 // End of Integration woo-variation-gallery and wc-frontend-manager
 //====================================================
@@ -405,10 +404,10 @@ add_filter('wcfm_is_allow_add_attribute', 'wp_le_wcfm_is_allow_add_attribute', 9
 function wp_le_wcfm_is_allow_add_attribute() {
   return false;
 }
-
 //====================================================
 // End of Disable "virtual", "downloadable", "schedule", DRAFT, "Add attributes" from WCFM add product
 //====================================================
+
 
 //====================================================
 // Customer site
@@ -422,6 +421,11 @@ add_filter('woocommerce_product_tabs', 'wp_le_woocommerce_product_tabs', 99);
 function wp_le_woocommerce_product_tabs($tabs) {
   unset($tabs['additional_information']);
   return $tabs;
+}
+
+add_filter('depot_mikado_title_area_height_default_value', 'wp_le_depot_mikado_title_area_height_default_value', 99);
+function wp_le_depot_mikado_title_area_height_default_value($height) {
+  return 100;
 }
 //====================================================
 // End of Customer site
