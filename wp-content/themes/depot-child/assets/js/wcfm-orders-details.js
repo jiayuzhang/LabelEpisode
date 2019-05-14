@@ -9,7 +9,6 @@ jQuery(function ($) {
     const data = {
       action: 'wp_le_ajax_vendor_add_order_notes',
       note: content,
-      note_type: 'vendor',
       order_id: labelepisode_ajax.order_id,
       security: labelepisode_ajax.security,
     };

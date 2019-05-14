@@ -256,6 +256,7 @@ class WC_Order extends WC_Abstract_Order {
 
       $this->save_items();
       $this->status_transition();
+      $this->shipping_status_transition();
     } catch (Exception $e) {
       $logger = wc_get_logger();
       $logger->error(
@@ -381,17 +382,18 @@ class WC_Order extends WC_Abstract_Order {
    * @param string $new_shipping_status Status to change the order to. No internal wc- prefix is
    *     required.
    * @param string $note Optional note to add.
+   * @param string $by By whom? 'admin' or 'vendor'
    *
    * @return bool
    * @uses WC_Order::set_status()
    */
-  public function update_shipping_status($new_shipping_status, $note = '') {
+  public function update_shipping_status($new_shipping_status, $note = '', $by = 'admin') {
     if (!$this->get_id()) { // Order must exist.
       return false;
     }
 
     try {
-      $this->set_shipping_status($new_shipping_status, $note);
+      $this->set_shipping_status($new_shipping_status, $note, true, $by);
       $this->save();
       do_action('woocommerce_le_order_shipping_status_change', $this->get_id(),
           $new_shipping_status);
@@ -456,6 +458,28 @@ class WC_Order extends WC_Abstract_Order {
         $this->add_order_note(__('Error during status transition.', 'woocommerce') . ' '
             . $e->getMessage());
       }
+    }
+  }
+
+
+  /**
+   * Handle the shipping status transition.
+   */
+  protected function shipping_status_transition() {
+    $shipping_status_transition = $this->shipping_status_transition;
+
+    // Reset status transition variable.
+    $this->shipping_status_transition = false;
+
+    if ($shipping_status_transition) {
+      $transition_note = sprintf(__('Order shipping status changed from %1$s to %2$s.',
+          'woocommerce'), $shipping_status_transition['from'],
+          $shipping_status_transition['to']);
+
+      // FOR NOW, any shipping status change are not sent to customer
+      // Note the transition occurred.
+      $this->add_order_note(trim($shipping_status_transition['note'] . ' ' . $transition_note),
+          0, $shipping_status_transition['manual'], $shipping_status_transition['is_vendor_note']);
     }
   }
 
@@ -1359,7 +1383,15 @@ class WC_Order extends WC_Abstract_Order {
     $this->set_address_prop('country', 'shipping', $value);
   }
 
-  public function set_shipping_status($value, $note = '') {
+  /**
+   * Set shipping status.
+   *
+   * @param string  $value Shipping status code.
+   * @param string  $note  Optional note to add.
+   * @param boolean $manual_update Is this a manual order status change?.
+   * @param string  $by If manual update, by whom? 'admin' or 'vendor'.
+   */
+  public function set_shipping_status($value, $note = '', $manual_update = false, $by = 'admin') {
     if (!empty($value) && !in_array($value, array_keys($this->get_valid_shipping_statuses()))) {
       throw new Exception ('Invalid shipping status: ' + $value);
     }
@@ -1373,6 +1405,8 @@ class WC_Order extends WC_Abstract_Order {
           'from' => $old_value,
           'to' => $value,
           'note' => $note,
+          'manual' => $manual_update,
+          'is_vendor_note' => $by == 'vendor',
       );
     }
   }
@@ -1876,10 +1910,11 @@ class WC_Order extends WC_Abstract_Order {
    * @param string $note Note to add.
    * @param int $is_customer_note Is this a note for the customer?.
    * @param bool $added_by_user Was the note added by a user?.
+   * @param bool $is_vendor_note Is this a note for the vendor?.
    *
    * @return int                       Comment ID.
    */
-  public function add_order_note($note, $is_customer_note = 0, $added_by_user = false) {
+  public function add_order_note($note, $is_customer_note = 0, $added_by_user = false, $is_vendor_note = false) {
     if (!$this->get_id()) {
       return 0;
     }
@@ -1913,6 +1948,7 @@ class WC_Order extends WC_Abstract_Order {
         array(
             'order_id' => $this->get_id(),
             'is_customer_note' => $is_customer_note,
+            'is_vendor_note' => $is_vendor_note,
         )
     );
 
@@ -1927,6 +1963,10 @@ class WC_Order extends WC_Abstract_Order {
               'customer_note' => $commentdata['comment_content'],
           )
       );
+    }
+
+    if ($is_vendor_note) {
+      add_comment_meta($comment_id, 'is_vendor_note', 1);
     }
 
     return $comment_id;

@@ -633,7 +633,7 @@ class WC_Meta_Box_Order_Data {
 		// Save order data.
 		$order->set_props( $props );
 		$order->set_status( wc_clean( $_POST['order_status'] ), '', true );
-		$order->set_shipping_status( wc_clean($_POST['shipping_status'] ), '');
+		$order->set_shipping_status(wc_clean($_POST['shipping_status'] ), '', true, 'admin');
 		$order->save();
 	}
 }

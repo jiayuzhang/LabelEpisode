@@ -262,7 +262,7 @@ function wp_le_ajax_vendor_add_order_notes() {
   $note = wp_kses_post(trim(wp_unslash($_POST['note'])));
   if ($order_id > 0) {
     $order = wc_get_order($order_id);
-    $comment_id = $order->add_order_note($note, false, false);
+    $comment_id = $order->add_order_note($note, false, false, true);
     $note = wc_get_order_note($comment_id);
     wp_le_render_order_note($note);
   }
@@ -271,9 +271,9 @@ function wp_le_ajax_vendor_add_order_notes() {
 
 // Set the comment's author and author_email to vendor if the note is
 // added from vendor's store-manager page.
-add_filter('woocommerce_new_order_note_data', 'wp_le_woocommerce_new_order_note_data', 99, 1);
-function wp_le_woocommerce_new_order_note_data($commentdata) {
-  if ($_POST['note_type'] === 'vendor') {
+add_filter('woocommerce_new_order_note_data', 'wp_le_woocommerce_new_order_note_data', 99, 2);
+function wp_le_woocommerce_new_order_note_data($commentdata, $additionalData) {
+  if ($additionalData['is_vendor_note']) {
     if (wcfm_is_vendor()) {
       $user = wp_get_current_user();
       $commentdata['comment_author'] = $user->display_name;
@@ -282,16 +282,6 @@ function wp_le_woocommerce_new_order_note_data($commentdata) {
     }
   }
   return $commentdata;
-}
-
-// The `note_type` is only used by WC to determine if a comment is for
-// customer. We will check the actual `note_type` in HTTP POST body to
-// flip `is_vendor_note` bit in metadata accordingly.
-add_action('wp_insert_comment', 'wp_le_wp_insert_comment', 99, 2);
-function wp_le_wp_insert_comment($id, $comment) {
-  if ($_POST['note_type'] === 'vendor') {
-    add_comment_meta($id, 'is_vendor_note', 1);
-  }
 }
 
 add_action('end_wcfm_orders_details', 'wp_le_end_wcfm_orders_details', 99, 1);

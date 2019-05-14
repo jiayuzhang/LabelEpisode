@@ -572,7 +572,7 @@ class WCFM_Ajax {
     if ($order_id && $shipped_to) {
       $order = wc_get_order($order_id);
       $shipping_status = $shipped_to === 'admin' ? 'shipped_to_admin' : 'shipped_to_customer';
-      $order->update_shipping_status($shipping_status, $tracking);
+      $order->update_shipping_status($shipping_status, $tracking, 'vendor');
 
       // Add Order Note for Log
       $user_id = apply_filters('wcfm_current_vendor_id', get_current_user_id());
@@ -587,11 +587,11 @@ class WCFM_Ajax {
           . get_wcfm_view_order_url($order_id) . '">' . $order->get_order_number() . '</a>',
           $order->get_shipping_status_name(),
           $shop_name);
-      $is_customer_note = apply_filters('wcfm_is_allow_order_update_note_for_customer', '1');
-      $comment_id = $order->add_order_note($wcfm_messages, $is_customer_note);
-      if (wcfm_is_vendor()) {
-        add_comment_meta($comment_id, '_vendor_id', $user_id);
-      }
+      // $is_customer_note = apply_filters('wcfm_is_allow_order_update_note_for_customer', '1');
+      // $comment_id = $order->add_order_note($wcfm_messages, $is_customer_note);
+      // if (wcfm_is_vendor()) {
+      //   add_comment_meta($comment_id, '_vendor_id', $user_id);
+      // }
 
       $WCFM->wcfm_notification->wcfm_send_direct_message(-2, 0, 1, 0, $wcfm_messages,
           'status-update');
@@ -1268,14 +1268,14 @@ class WCFM_Ajax {
         $_SESSION['location']['city'] = '';
 
         // wcfm_detailed_analysis Query
-        $wcfm_detailed_analysis = "INSERT into {$wpdb->prefix}wcfm_detailed_analysis 
+        $wcfm_detailed_analysis = "INSERT into {$wpdb->prefix}wcfm_detailed_analysis
 																	(`is_shop`, `is_store`, `is_product`, `product_id`, `author_id`, `referer`, `ip_address`, `country`, `state`, `city`)
 																	VALUES
 																	(0, 0, 1, {$product_id}, {$post_author}, '{$_SERVER['HTTP_REFERER']}', '{$_SERVER['REMOTE_ADDR']}', '{$_SESSION['location']['country']}', '{$_SESSION['location']['state']}', '{$_SESSION['location']['city']}')";
         $wpdb->query($wcfm_detailed_analysis);
 
         // wcfm_daily_analysis Query
-        $wcfm_daily_analysis = "INSERT into {$wpdb->prefix}wcfm_daily_analysis 
+        $wcfm_daily_analysis = "INSERT into {$wpdb->prefix}wcfm_daily_analysis
 																	(`is_shop`, `is_store`, `is_product`, `product_id`, `author_id`, `count`, `visited`)
 																	VALUES
 																	(0, 0, 1, {$product_id}, {$post_author}, 1, '{$todate}')
