@@ -468,9 +468,12 @@ class WCFM_Orders_WCFMMarketplace_Controller {
         if (wcfm_is_vendor()
             && ($the_order->get_shipping_status() == 'pending'
                 || empty($the_order->get_shipping_status()))) {
+          $ship_to = wp_le_is_direct_vendor() ? 'customer' : 'admin';
           $actions .= '<a class="wcfm_order_mark_shipped wcfm-action-icon" href="#" data-orderid="'
-              . $order->order_id . '"><span class="wcfmfa wcicon-truck-1 text_tip" data-tip="'
-              . esc_attr__('Mark as shipped', 'wc-frontend-manager') . '"></span></a>';
+              . $order->order_id
+              . '" data-ship-to="' . $ship_to . '"><span class="wcfmfa wcicon-truck-1 text_tip" 
+                    data-tip="' . esc_attr__('Mark as shipped', 'wc-frontend-manager')
+              . '"></span></a>';
         }
 
         if ($can_view_orders)
