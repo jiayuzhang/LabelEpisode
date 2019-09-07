@@ -1,0 +1,176 @@
+#!/usr/bin/env node
+const cheerio = require('cheerio');
+const fs = require('fs');
+const minimist = require('minimist');
+const rp = require('request-promise-native');
+const process = require('process');
+const _ = require('lodash');
+var WooCommerceAPI = require('woocommerce-api');
+
+process.chdir(__dirname);
+
+async function parse() {
+  const data = JSON.parse(fs.readFileSync('/tmp/abc', 'utf8'));
+  for (const item of data.rows) {
+    let title = item.title;
+    if (item.shop_name == 'Nashascope 买手店') {
+      title = await product({ i: item.id });
+    }
+    console.log(`{"id":${item.id}, "title":"${title}"},`);
+  }
+}
+
+function parse2() {
+  const data = JSON.parse(fs.readFileSync('/tmp/abc', 'utf8'));
+  const dupTitle = new Map();
+  const dupId = new Set();
+  for (const item of data) {
+    const title = _.trim(item.title);
+    if (dupTitle.has(title)) {
+      dupId.add(dupTitle.get(title));
+      dupId.add(item.id);
+    } else {
+      dupTitle.set(title, item.id);
+    }
+  }
+
+  for (const item of data) {
+    if (!dupId.has(item.id)) {
+      console.log(`{"id":${item.id}, "title":"${_.trim(item.title)}"},`);
+    }
+  }
+}
+
+// Tag function
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
+function template(strings, ...keys) {
+  return function(...values) {
+    var dict = values[values.length - 1] || {};
+    var result = [strings[0]];
+    keys.forEach(function(key, i) {
+      var value = Number.isInteger(key) ? values[key] : dict[key];
+      result.push(value, strings[i + 1]);
+    });
+    return result.join('');
+  };
+}
+
+const productUrlTemplate = template`https://wx.pin-xu.com/admin/ware/edit?ware_id=${0}`;
+async function product(args) {
+  const id = args.i || args.id;
+
+  const options = {
+    url: productUrlTemplate(id),
+    method: 'GET',
+    headers: {
+      accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+      'accept-encoding': 'gzip, deflate',
+      'accept-language': 'en-US,en;q=0.9,zh-CN,zh;q=0.8,zh-TW;q=0.4',
+      'user-agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97 Safari/537.36',
+      // 'x-requested-with': 'XMLHttpRequest',
+      'cookie': 'PHPSESSID=cbo88bokm3up8t2di4rkr4dqt0; keeplogin=12%7C86400%7C1564197855%7C13838662876485fb6e1dc086e4b78275',
+    },
+    // True to decode compressed content encodings in response
+    gzip: true,
+    resolveWithFullResponse: true,
+    // status codes other than 2xx reject promise
+    simple: true,
+  };
+
+  const response = await rp(options);
+  const $ = cheerio.load(response.body);
+  const subTitle = _.trim($('#sub_title').attr('value'));
+  return subTitle;
+}
+
+function slugify(s) {
+  s = s.replace(/[-“”‘’'+]/g, '');
+  s = s.replace(/[ .]/g, '-');
+  s = encodeURIComponent(s).toLowerCase();
+  // s = s.substring(0, 200);
+  return s;
+}
+
+// WooCommerce Auth issue with some hosting (e.g. GoDaddy)
+// https://help.robotninja.com/en/articles/2015407-woocommerce-api-authentication-issues
+var WooCommerce = new WooCommerceAPI({
+  // url: 'http://wp.local',
+  // consumerKey: 'ck_c4b2f6f3a316e7ce9935baebd15aec150b46d8c3',
+  // consumerSecret: 'cs_4ad735eec5faf1a4d20d685a2bb7f87b36c3bb87',
+  url: 'https://www.labelepisode.com/home',
+  consumerKey: 'ck_c23f387bff044f634ae63a8b193c5f0fa195cc6c',
+  consumerSecret: 'cs_1b6459782536ac3a3cda05970ffb13c6124a8f2d',
+  wpAPI: true,
+  version: 'wc/v3',
+  // Force Basic Authentication as query string true and using under HTTPS
+  // GoDaddy apache has issue to passing AUTH header...
+  queryStringAuth: true,
+  timeout: 1000000000
+});
+
+async function fill() {
+  const data = JSON.parse(fs.readFileSync('/tmp/abc', 'utf8'));
+  for (const item of data) {
+    item.slug = slugify(item.title);
+  }
+
+  // const ids = JSON.parse(fs.readFileSync('/tmp/export_wp_post_product_ids.json', 'utf8'));
+  const ids = ["8225", "8232", "8234", "8241", "8244", "8253", "8260", "8267", "8274", "8281", "8289", "8301", "8308", "8318", "8323", "8329", "8336", "8343", "8350", "8356", "8358", "8365", "8372", "8380", "8388", "8396", "8404", "8412", "8420", "8434", "8441", "8448", "8455", "8462", "8471", "8479", "8486", "8494", "8502", "8520", "8527", "8534", "8541", "8548", "8568", "8575", "8582", "8589", "8595", "8597", "8604", "8610", "8619", "8626", "8633", "8640", "8650", "8657", "8665", "8679", "8686"];
+  for (const id of ids) {
+    console.log(`Fetching WooCommerce product id=${id}`);
+    const response = await WooCommerce.getAsync(`products/${id}`);
+    const wooProduct = JSON.parse(response.body);
+    console.log(`Slug: ${wooProduct.slug}`);
+
+    let found = false;
+    if (wooProduct.sku.length > 0) {
+      console.log(`sku exist sku=${wooProduct.sku}`);
+      found = true;
+    } else {
+      for (const item of data) {
+        if (item.slug.includes(wooProduct.slug)) {
+        // if (wooProduct.slug.includes(item.slug)) {
+          console.log(`Match pinxu id=${item.id}`);
+          await WooCommerce.put(`products/${id}`, { sku: `px${item.id}` });
+          found = true;
+          break;
+        }
+      }
+    }
+    if (!found) {
+      console.log('Not found match');
+    }
+
+    console.log('=======================================================');
+  }
+
+}
+
+//=================================
+// Main program
+//=================================
+const args = minimist(process.argv.slice(2));
+
+const catchFn = (err) => {
+  console.log('ERROR!', err);
+  process.exit(0);
+};
+
+const cmd = args._[0];
+switch (cmd) {
+  case 'parse':
+    parse().catch(catchFn);
+    break;
+
+  case 'parse2':
+    parse2();
+    break;
+
+  case 'fill':
+    fill().catch(catchFn);
+    break;
+
+  default:
+    console.error(`"${cmd}" is not a valid command!`);
+}

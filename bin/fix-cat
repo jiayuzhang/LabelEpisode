@@ -1,0 +1,66 @@
+#!/usr/bin/env node
+const fs = require('fs');
+const minimist = require('minimist');
+const process = require('process');
+const _ = require('lodash');
+var WooCommerceAPI = require('woocommerce-api');
+
+process.chdir(__dirname);
+
+// WooCommerce Auth issue with some hosting (e.g. GoDaddy)
+// https://help.robotninja.com/en/articles/2015407-woocommerce-api-authentication-issues
+var WooCommerce = new WooCommerceAPI({
+  // url: 'http://wp.local',
+  // consumerKey: 'ck_c4b2f6f3a316e7ce9935baebd15aec150b46d8c3',
+  // consumerSecret: 'cs_4ad735eec5faf1a4d20d685a2bb7f87b36c3bb87',
+  url: 'https://www.labelepisode.com/home',
+  consumerKey: 'ck_c23f387bff044f634ae63a8b193c5f0fa195cc6c',
+  consumerSecret: 'cs_1b6459782536ac3a3cda05970ffb13c6124a8f2d',
+  wpAPI: true,
+  version: 'wc/v3',
+  // Force Basic Authentication as query string true and using under HTTPS
+  // GoDaddy apache has issue to passing AUTH header...
+  queryStringAuth: true,
+  timeout: 1000000000
+});
+
+async function fix() {
+  const data = JSON.parse(fs.readFileSync('/tmp/export_wp_post_product_ids.json', 'utf8'));
+  for (const d of data) {
+    let id = d.ID;
+
+    id = 9973;
+    console.log(`Fixing WooCommerce product id=${id}`);
+    const response = await WooCommerce.getAsync(`products/${id}`);
+    const wooProduct = JSON.parse(response.body);
+
+    const cats = wooProduct.categories;
+    const idx = cats.findIndex(item => item.id == 41 || item.id == 40);
+    const menOrWomen = cats.splice(idx, 1);
+    cats.unshift(menOrWomen[0]);
+
+    // console.log(cats);
+    await WooCommerce.put(`products/${id}`, { categories: cats });
+    break;
+  }
+}
+
+//=================================
+// Main program
+//=================================
+const args = minimist(process.argv.slice(2));
+
+const catchFn = (err) => {
+  console.log('ERROR!', err);
+  process.exit(0);
+};
+
+const cmd = args._[0];
+switch (cmd) {
+  case 'fix':
+    fix().catch(catchFn);
+    break;
+
+  default:
+    console.error(`"${cmd}" is not a valid command!`);
+}

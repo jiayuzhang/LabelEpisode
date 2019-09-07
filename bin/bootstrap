@@ -1,0 +1,800 @@
+#!/usr/bin/env node
+const cheerio = require('cheerio');
+const minimist = require('minimist');
+const rp = require('request-promise-native');
+const process = require('process');
+const _ = require('lodash');
+var WooCommerceAPI = require('woocommerce-api');
+
+process.chdir(__dirname);
+
+function help() {
+  console.log(`
+Usage: bootstrap command [options]
+
+Commands:
+  help - show helpdoc
+    <no options>
+
+  product - fetch product of a specified ID from pinxu mini program
+    -i, --id id    ID of product
+
+  woo - test woocommerce API
+    -i, --id id    ID of product
+
+Examples:
+  $ bootstrap help
+  $ bootstrap product -i 123
+  $ bootstrap woo
+    `);
+}
+
+// Tag function
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
+function template(strings, ...keys) {
+  return function(...values) {
+    var dict = values[values.length - 1] || {};
+    var result = [strings[0]];
+    keys.forEach(function(key, i) {
+      var value = Number.isInteger(key) ? values[key] : dict[key];
+      result.push(value, strings[i + 1]);
+    });
+    return result.join('');
+  };
+}
+
+const SUCCESS = 1;
+const NOT_FOUND = 2;
+const ERROR = 3;
+const CRAWLER_ERROR = 4;
+
+// IDs need special handling
+const SPECIAL_ID = [
+  // Earing, we need remove 'Size' variation, and allow '数量' (single or pair style)
+  460, 461, 462, 463, 464, 465, 510, 511, 512,
+];
+const SKIP_ID = [
+  // 胸针, simple item
+  468
+];
+const GROUP = {
+  '1': 'men',
+  '2': 'women',
+  '3': 'all',
+};
+const CATEGORY = {
+  1:  { w: 46,  m: 43  }, // 衣服 - Clothing
+  2:  { w: 173, m: 18  }, // ├ T恤/POLO - T-Shirts/POLO
+  5:  { w: 174, m: 17  }, // ├ 卫衣 - Hoodies
+  25: { w: 249, m: 248 }, // ├ 针织衫 - Knitwear
+  13: { w: 175, m: 190 }, // ├ 衬衫 - Shirts
+  43: { w: 176, m: 191 }, // └ 毛衣 - Sweaters
+
+  6:  { w: 153, m: 192 }, // 裤装 - Bottoms
+  15: { w: 177 },         // ├ 短裙 - Skirts
+  16: { w: 178, m: 193 }, // ├ 短裤 - Shorts
+  28: { w: 179, m: 194 }, // ├ 阔腿裤 - Wide-leg Trousers
+  29: { w: 180, m: 195 }, // ├ 运动裤 - Sweatpants
+  30: { w: 181, m: 196 }, // ├ 正装裤 - Suit Pants
+  45: { w: 182, m: 197 }, // ├ 休闲裤 - Casuals
+  46: { w: 183 },         // └ 裙裤 - Pantskirts
+
+  37: { w: 154, m: 198 }, // 外装 - Outwear
+  40: { w: 184, m: 15  }, // ├ 大衣 - Coats
+  38: { w: 185, m: 200 }, // ├ 夹克 - Jackets
+  39: { w: 186, m: 201 }, // ├ 休闲西装 - Blazers
+  41: { w: 187, m: 202 }, // ├ 羽绒服 - Down Jackets
+  47: { w: 188, m: 203 }, // └ 正装西装 - Suits
+
+  32: { w: 155 },         // 裙装 - Dresses
+  33: { w: 164 },         // ├ 连衣裙 - Overalls
+  35: { w: 164 },         // ├ 长裙 - Maxi & Midi Dresses
+  36: { w: 165 },         // ├ 短裙 - Mini Dresses
+  44: { w: 166 },         // ├ 吊带裙 - Shoulder-strap Skirts
+  60: { w: 167 },         // └ 礼裙 - Evening/Party Dresses
+
+  7:  { w: 144 },         // 箱包 - Handbags
+  17: { w: 145, m: 217 }, // ├ 双肩包 - Backpacks
+  48: { w: 146, m: 218 }, // ├ 手提包 - Totes
+  49: { w: 147, m: 219 }, // ├ 钱包  - Wallets
+  50: { w: 148, m: 220 }, // ├ 单肩包 - Shoulder Bags
+  51: { w: 149, m: 221 }, // ├ 卡包 - Card Cases
+  52: { w: 150 },         // ├ 手包 - Clutches
+  53: {},                 // ├ 电脑包 - Laptop Bags
+  54: { w: 151, m: 222 }, // └ 腰包 - Belt Bags
+
+  8:  { w: 48, m: 16 },   // 首饰  Jewelry & Accessories
+  19: { w: 168, m: 211 }, // ├ 项链  Necklaces
+  18: { w: 169, m: 213 }, // ├ 耳环  Earrings
+  23: { w: 170, m: 212 }, // ├ 手链  Bracelets
+  24: { w: 171, m: 214 }, // ├ 戒指  Rings
+  34: { w: 172, m: 215 }, // └ 别针  Brooches
+  63: {},                 // 脚链
+
+  9:  { w: 47, m: 204 },  // 鞋 Shoes
+  20: { w: 156, m: 205 }, // ├ 平底鞋 Flats
+  21: { w: 157 },         // ├ 高跟鞋 High-heels
+  42: { w: 158, m: 206 }, // ├ 运动鞋 Sneakers
+  55: { w: 159 },         // ├ 短靴  Booties
+  56: { w: 160, m: 207 }, // ├ 长靴  Boots
+  57: { w: 161, m: 209 }, // ├ 拖鞋  Slippers
+  61: { w: 162 },         // ├ 中跟鞋 Mid-heels
+  62: { w: 163, m: 210 }, // └ 凉拖  Sandals
+
+  58: {},                 // 生活精选
+  59: {},                 // 手机壳
+  64: {},                 // 袖扣
+};
+const CATEGORY_MEN = 40;
+const CATEGORY_WOMEN = 41;
+const VARIATION = {
+  '尺码': 'Size',
+  '颜色': 'Color',
+  '码数': 'Size',
+  '数量': 'Style', // earing single/pair
+};
+const BRAND = {
+  'Blancore': 223,
+  'FIFTH AVE': 224,
+  'GEMHOLIC': 225,
+  'Label Episode': 227,
+  'MARSEVEN': 228,
+  'Nashascope': 229,
+  'NONE OF MY BUSINESS': 230,
+  'Slumber Chi': 231,
+  'TIMFORMATION': 232,
+  'UNDERGRADUATE': 233,
+  'XINYEJIANG': 234,
+  'YEE SI': 235,
+  'The Dirty Collection': 236,
+  'LECRESCENDO': 237,
+  'XIAOXU': 238,
+  'IIMAGEPLUS': 239,
+  'MS MIN': 240,
+  'YIRANTIAN': 241,
+  'ACLER': 242,
+  'NOMANOMAN': 243,
+  'JINNNN': 244,
+  'YUUL YIE': 245,
+  'VVNK': 246,
+  'Beton Cire': 247
+};
+const BRAND_NASHA = 'Nashascope 买手店';
+// eu (cn) -> us
+// wconcept shoe size chart
+const W_SHOE_SIZE = {
+  '35':   '5',
+  '35.5': '5.5',
+  '36':   '6',
+  '36.5': '6.5',
+  '37':   '7',
+  '37.5': '7.5',
+  '38':   '8',
+  '38.5': '8.5',
+  '39':   '9',
+};
+const M_SHOE_SIZE = {
+  '40':   '6.5',
+  '40.5': '7',
+  '41':   '7.5',
+  '41.5': '8',
+  '42':   '8.5',
+  '42.5': '9',
+  '43':   '9.5',
+  '43.5': '10',
+  '43':   '10.5',
+};
+const productUrlTemplate = template`https://wx.pin-xu.com/admin/ware/edit?ware_id=${0}`;
+async function product(args) {
+  const id = args.i || args.id;
+
+  const options = {
+    url: productUrlTemplate(id),
+    method: 'GET',
+    headers: {
+      accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+      'accept-encoding': 'gzip, deflate',
+      'accept-language': 'en-US,en;q=0.9,zh-CN,zh;q=0.8,zh-TW;q=0.4',
+      'user-agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97 Safari/537.36',
+      // 'x-requested-with': 'XMLHttpRequest',
+      'cookie': 'PHPSESSID=cbo88bokm3up8t2di4rkr4dqt0; keeplogin=12%7C86400%7C1564197855%7C13838662876485fb6e1dc086e4b78275',
+    },
+    // True to decode compressed content encodings in response
+    gzip: true,
+    resolveWithFullResponse: true,
+    // status codes other than 2xx reject promise
+    simple: true,
+  };
+
+  const response = await rp(options);
+  const $ = cheerio.load(response.body);
+
+  // console.log(response.body);
+
+  let matches = $('body').html().match(/No Results were found/i);
+  if (matches && matches.length > 0) {
+    console.log(`No product found ID=${id}`);
+    return NOT_FOUND;
+  }
+  matches = $('body').html().match(/system-message error/i);
+  if (matches && matches.length > 0) {
+    console.log('Crawler lose session cookie');
+    return CRAWLER_ERROR;
+  }
+
+  const result = {};
+
+  let raw;
+
+  // Parse brand
+  result.brand = _.trim($('#c-shop_id option[selected="selected"]').text());
+
+  // Group (top category)
+  const groupId = _.trim($('#c-group_id').attr('value'));
+  result.topCat = GROUP[groupId];
+  // Category
+  const catId = _.trim($('#c-category_id').attr('value'));
+  result.catId = catId; //CATEGORY[catId];
+
+  // Title (seems unused and redundant)
+  result.title = _.trim($('#title').attr('value'));
+  result.subTitle = _.trim($('#sub_title').attr('value'));
+
+  // Images (primary and others)
+  result.pic = _.trim($('#c-picture').attr('value'));
+  raw = _.trim($('#c-images').attr('value'));
+  result.otherPics = _.isEmpty(raw) ? [] : raw.split(',');
+
+  // Variations (if any)?
+  // Remove the trailing comma
+  raw = _.trim($('body').html().match(/skuOption:(.*)\n/i)[1]).slice(0, -1);
+  const skuOption = JSON.parse(raw);
+  // console.log(JSON.stringify(skuOption, null, 4));
+  const vars = [];
+  _.each(skuOption, (val) => {
+    const variation = {};
+    variation.name = _.trim(val.text);
+    variation.items = val.items.map(item => _.trim(item.text).toLowerCase());
+    vars.push(variation);
+  });
+  result.vars = vars;
+
+  raw = _.trim($('body').html().match(/skuList:(.*)\n/i)[1]).slice(0, -1);
+  const skuList = JSON.parse(raw);
+  // console.log(JSON.stringify(skuList, null, 4));
+  const varProducts = [];
+  _.each(skuList, (val) => {
+    const varProduct = {};
+    varProduct.columns = _.map(val.columns, col => ({
+      type: col.keyAlias,
+      value: _.trim(col.text).toLowerCase() }));
+    varProduct.price = val.price;
+    varProduct.marketPrice = val['market_price'] || '';
+    varProducts.push(varProduct);
+  });
+  result.varProducts = varProducts;
+
+  return result;
+}
+
+async function mini(args) {
+  const id = args.i || args.id;
+  const res = await product({ id });
+  if (_.isNumber(res)) {
+    console.log(res);
+  } else {
+    console.log(JSON.stringify(res, null, 4));
+  }
+}
+
+// WooCommerce Auth issue with some hosting (e.g. GoDaddy)
+// https://help.robotninja.com/en/articles/2015407-woocommerce-api-authentication-issues
+var WooCommerce = new WooCommerceAPI({
+  // url: 'http://wp.local',
+  // consumerKey: 'ck_c4b2f6f3a316e7ce9935baebd15aec150b46d8c3',
+  // consumerSecret: 'cs_4ad735eec5faf1a4d20d685a2bb7f87b36c3bb87',
+  url: 'https://www.labelepisode.com/home',
+  consumerKey: 'ck_c23f387bff044f634ae63a8b193c5f0fa195cc6c',
+  consumerSecret: 'cs_1b6459782536ac3a3cda05970ffb13c6124a8f2d',
+  wpAPI: true,
+  version: 'wc/v3',
+  // Force Basic Authentication as query string true and using under HTTPS
+  // GoDaddy apache has issue to passing AUTH header...
+  queryStringAuth: true,
+  timeout: 1000000000
+});
+
+async function woo(args) {
+  const id = args.i || args.id;
+  const response = await WooCommerce.getAsync(`products/${id}`);
+  console.log(JSON.stringify(JSON.parse(response.body), null, 4));
+}
+
+// pairWooProduct - the same product created for either women or men, pass in to
+//                  re-use image ids for its pair product creation
+async function wooCreateProduct(miniProduct, miniId, pairWooProduct = undefined) {
+  const dataOrErrorMsg = convertWooProduct(miniProduct, miniId, pairWooProduct);
+  if (_.isString(dataOrErrorMsg)) {
+    console.log(`Fail to convert product: ${dataOrErrorMsg}`);
+    return ERROR;
+  }
+  // return dataOrErrorMsg;
+  return await WooCommerce.postAsync('products', dataOrErrorMsg);
+}
+
+async function wooCreateVariation(wooProductId, miniProduct, miniId) {
+  const data = { create: [] };
+  for (const varProduct of miniProduct.varProducts) {
+    data.create.push({
+      regular_price: convertPrice(varProduct.price),
+      sale_price: convertPrice(varProduct.marketPrice),
+      attributes: varProduct.columns.map(col => ({
+        name: VARIATION[col.type],
+        option: col.type == '码数' ? convertShoeSize(col.value, miniProduct.topCat) : col.value
+      })),
+    });
+  }
+
+  if (SPECIAL_ID.includes(miniId)) {
+    // For earing, remove '尺码'/Size attributes
+    for (const c of data.create) {
+      _.remove(c.attributes, (attr) => attr.name == 'Size');
+    }
+  }
+
+  // return data;
+  return await WooCommerce.postAsync(`products/${wooProductId}/variations/batch`, data);
+}
+
+function convertWooProduct(p, id, pairWooProduct = undefined) {
+  // validate if any conversion condition meets
+
+  // 1. title and subTitle not null
+  if (_.isEmpty(p.title) || _.isEmpty(p.subTitle)) {
+    return 'title and subTitle not null';
+  }
+  // 2. At least, one pic
+  if (_.isEmpty(p.pic)) {
+    return 'at least one pic';
+  }
+  // 3. Must have category mapping
+  if (!CATEGORY[p.catId]) {
+    return 'must have category mapping';
+  }
+  let categories;
+  if (p.topCat == 'men') {
+    if (!CATEGORY[p.catId]['m']) {
+      return 'must have category mapping';
+    }
+    categories = [{ id: CATEGORY_MEN }, { id: CATEGORY[p.catId]['m'] }];
+  } else {
+    if (!CATEGORY[p.catId]['w']) {
+      return 'must have category mapping';
+    }
+    categories = [{ id: CATEGORY_WOMEN }, { id: CATEGORY[p.catId]['w'] }];
+  }
+  // 4. Must have variation mapping
+  if (_.isEmpty(p.vars)) {
+    return 'must have variation mapping';
+  }
+  const bool = p.vars.map(v => !!VARIATION[v.name]);
+  if (bool.includes(false)) {
+    return 'must have variation mapping';
+  }
+  // 5. Must have brand mapping
+  if (p.brand === BRAND_NASHA) {
+    if (!BRAND[p.title]) {
+      return 'must have brand mapping';
+    }
+  } else if (!BRAND[p.brand]) {
+    return 'must have brand mapping';
+  }
+
+  if (p.catId == 33 || p.catId == 25) {
+    console.log(`The product category ${p.catId} might require review.`);
+  }
+
+  let images;
+  if (pairWooProduct) {
+    images = pairWooProduct.images.map(img => ({ id: img.id }));
+  } else {
+    images = [];
+    images.push({ src: p.pic });
+    for (const pic of p.otherPics) {
+      images.push({ src: pic });
+    }
+  }
+
+  const attributes = p.vars.map(v => {
+    return {
+      name: VARIATION[v.name],
+      visible: true,
+      variation: true,
+      options: v.name == '码数' ? v.items.map(itm => convertShoeSize(itm, p.topCat)) : v.items
+    };
+  });
+
+  let converted;
+  if (p.brand === BRAND_NASHA) {
+    converted = {
+      name: p.subTitle,
+      type: 'variable',
+      short_description: p.subTitle, // No short description?
+      categories: categories,
+      images: images,
+      attributes: attributes,
+      brands: [BRAND[p.title]],
+    };
+  } else {
+    converted = {
+      name: p.title,
+      type: 'variable',
+      short_description: p.subTitle,
+      categories: categories,
+      images: images,
+      attributes: attributes,
+      brands: [BRAND[p.brand]],
+    };
+  }
+
+  if (SPECIAL_ID.includes(id)) {
+    // For earing remove 'Size' attribute
+    _.remove(converted.attributes, (attr) => attr.name == 'Size');
+  }
+  return converted;
+}
+
+function sleep(ms){
+  return new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
+}
+
+// SO FAR: id = 132
+async function test(args) {
+  const ids = [];
+  for (let id of ids) {
+    if (SKIP_ID.includes(id)) {
+      continue;
+    }
+    const res = await convert({ id });
+    if (res == CRAWLER_ERROR) {
+      break;
+    } else if (res == ERROR) {
+      // Let's continue error and figure out later
+      continue;
+    } else if (res == NOT_FOUND) {
+      console.log(`The mini product ${id} is not found`);
+    } // else res == SUCCESS
+  }
+
+  // const miniProduct = await product({ id: 120 });
+  // miniProduct.topCat = 'men';
+  // let converted = await wooCreateProduct(miniProduct);
+  // console.log(JSON.stringify(converted, null, 4));
+  // converted = await wooCreateVariation(123, miniProduct);
+  // console.log(JSON.stringify(converted, null, 4));
+
+
+  // for (let id = 515; id <= 540; id++) {
+  //   console.log(`Processing product ${id}...`);
+  //   const result = await product({ id });
+  //   if (result) {
+  //     // console.log(JSON.stringify(result, null, 4));
+  //     for (const variation of result.vars) {
+  //       if (variation.name !== '颜色' && variation.name !== '尺码' && variation.name !== '码数') {
+  //         console.log(`!!!!! Bad product ${id}`);
+  //       }
+  //     }
+  //     // if (result.topCat === 'all') {
+  //     //   console.log(`!!!!! All product ${id}`);
+  //     // }
+  //     await sleep(200);
+  //   }
+  // }
+
+  // const result = await product({ id: 10 });
+  // console.log(JSON.stringify(result, null, 4));
+}
+
+async function convert(args) {
+  const id = args.i || args.id;
+
+  console.log('------------------------------------------------------------');
+  console.log(`Fetch mini-program product ${id}`);
+  const miniProduct = await product({ id });
+  if (_.isNumber(miniProduct)) return miniProduct; // ERROR or NOT_FOUND
+  // if (!miniProduct) {
+  //   console.log(`The mini product ${id} is not found`);
+  //   return;
+  // }
+
+  console.log(`Upload mini-program product ${id} to create WooCommerce product`);
+  let cats;
+  if (miniProduct.topCat == 'all') {
+    console.log('This is ALL product, creating two copies under Men and Women');
+    cats = ['men', 'women'];
+  } else {
+    cats = [ miniProduct.topCat ];
+  }
+
+  const oldTopCat = miniProduct.topCat;
+
+  let pairProduct, resp;
+  for (const cat of cats) {
+    miniProduct.topCat = cat;
+    resp = await wooCreateProduct(miniProduct, id, pairProduct);
+    if (resp == ERROR) return ERROR;
+    if (!status2xx(resp.statusCode)) {
+      console.log(`FAIL1! ${resp.statusCode}`);
+      // console.log(resp);
+      return ERROR;
+    }
+
+    const wooProduct = JSON.parse(resp.body);
+    console.log(`WooCommerce product ${wooProduct.id} is created`);
+
+    resp = await wooCreateVariation(wooProduct.id, miniProduct, id);
+    if (resp == ERROR) return ERROR;
+    if (!status2xx(resp.statusCode)) {
+      console.log(`FAIL2! ${resp.statusCode}`);
+      // console.log(resp.body);
+      return ERROR;
+    }
+    console.log(`WooCommerce product variation ${wooProduct.id} is created`);
+
+    // Restore it back
+    miniProduct.topCat = oldTopCat;
+
+    pairProduct = wooProduct;
+  }
+
+  return SUCCESS;
+}
+
+function convertPrice(priceStr) {
+  if (!priceStr) {
+    return '';
+  }
+  // RMB to USD, by 7/26/19 currency exchange rate
+  const usd = Math.ceil(_.toNumber(priceStr) * 0.15);
+  return `${usd}.00`;
+}
+
+function convertShoeSize(shoeSizeStr, cat) {
+  if (shoeSizeStr.startsWith('#')) {
+    shoeSizeStr = shoeSizeStr.substring(1);
+  }
+
+  const shoeSize = cat == 'men' ? M_SHOE_SIZE : W_SHOE_SIZE;
+  if (!shoeSize[shoeSizeStr]) {
+    console.log(`Not found shoe size ${shoeSizeStr}`);
+    // Return it as it is, we manually fix later
+    return shoeSizeStr;
+  }
+  return shoeSize[shoeSizeStr];
+}
+
+// Main program
+const args = minimist(process.argv.slice(2));
+
+const catchFn = (err) => {
+  console.log('ERROR!', err);
+  process.exit(0);
+};
+
+function status2xx(statusCode) {
+  return 200 <= statusCode && statusCode < 300;
+}
+
+// Opens helpdoc via any of `le`, `le help`
+const cmd = args._[0] || 'help';
+switch (cmd) {
+  case 'help':
+    help();
+    break;
+
+  case 'product':
+    product(args).catch(catchFn);
+    break;
+
+  case 'woo':
+    woo(args).catch(catchFn);
+    break;
+
+  case 'convert':
+    convert(args).catch(catchFn);
+    break;
+
+  case 'test':
+    test(args).catch(catchFn);
+    break;
+
+  case 'mini':
+    mini(args).catch(catchFn);
+    break;
+
+  default:
+    console.error(`"${cmd}" is not a valid command!`);
+}
+
+/*
+[
+    {
+        "id": 53,
+        "checked": false,
+        "text": "尺码",
+        "items": [
+            {
+                "id": 138,
+                "text": "S",
+                "keyId": 53,
+                "keyAlias": "尺码"
+            },
+            {
+                "id": 139,
+                "text": "M",
+                "keyId": 53,
+                "keyAlias": "尺码"
+            }
+        ]
+    },
+    {
+        "id": 54,
+        "checked": false,
+        "text": "颜色",
+        "items": [
+            {
+                "id": 140,
+                "text": "白色",
+                "keyId": 54,
+                "keyAlias": "颜色"
+            }
+        ]
+    }
+]
+{
+    "0": {
+        "sku_id": "242",
+        "columns": {
+            "0": {
+                "keyId": 53,
+                "keyAlias": "尺码",
+                "id": 138,
+                "text": "S",
+                "rowspan": 1,
+                "firstRow": 0,
+                "display": true
+            },
+            "1": {
+                "keyId": 54,
+                "keyAlias": "颜色",
+                "id": 140,
+                "text": "白色",
+                "rowspan": 1,
+                "firstRow": 0,
+                "display": true
+            }
+        },
+        "price": "2350.00",
+        "market_price": "2350.00",
+        "stock_num": "1",
+        "code": ""
+    },
+    "1": {
+        "sku_id": "243",
+        "columns": {
+            "0": {
+                "keyId": 53,
+                "keyAlias": "尺码",
+                "id": 139,
+                "text": "M",
+                "rowspan": 1,
+                "firstRow": 1,
+                "display": true
+            },
+            "1": {
+                "keyId": 54,
+                "keyAlias": "颜色",
+                "id": 140,
+                "text": "白色",
+                "rowspan": 1,
+                "firstRow": 1,
+                "display": true
+            }
+        },
+        "price": "2350.00",
+        "market_price": "2350.00",
+        "stock_num": "0",
+        "code": ""
+    }
+}
+ */
+
+
+/*
+{
+    "brand": "IIMAGEPLUS",
+    "topCat": "all",
+    "cat": {
+        "w": 174,
+        "m": 17
+    },
+    "title": "IIMAGE+BLOODSTAIN SWEATER",
+    "subTitle": "红黑条纹毛衣",
+    "pic": "https://nhpx.oss-cn-shenzhen.aliyuncs.com/image/20190118/54adf67deecbc133ae2ddc6b65afcb53.jpg",
+    "otherPics": [
+        "https://nhpx.oss-cn-shenzhen.aliyuncs.com/image/20190118/058fe9a74b3babfa4b84c0a2e487602d.jpg",
+        "https://nhpx.oss-cn-shenzhen.aliyuncs.com/image/20190118/c6394e28b17cab9962aa1182eccffda5.jpg"
+    ],
+    "vars": [
+        {
+            "name": "尺码",
+            "items": [
+                "xs",
+                "s",
+                "m",
+                "l"
+            ]
+        }
+    ],
+    "varProducts": [
+        {
+            "columns": [
+                {
+                    "type": "尺码",
+                    "value": "xs"
+                }
+            ],
+            "price": "1599.00",
+            "marketPrice": "1599.00"
+        },
+        {
+            "columns": [
+                {
+                    "type": "尺码",
+                    "value": "s"
+                }
+            ],
+            "price": "1599.00",
+            "marketPrice": "1599.00"
+        },
+        {
+            "columns": [
+                {
+                    "type": "尺码",
+                    "value": "m"
+                }
+            ],
+            "price": "1599.00",
+            "marketPrice": "1599.00"
+        },
+        {
+            "columns": [
+                {
+                    "type": "尺码",
+                    "value": "l"
+                }
+            ],
+            "price": "1599.00",
+            "marketPrice": "1599.00"
+        }
+    ]
+}
+*/
+
+/*
+
+US  IT/EU UK  FR  KR
+5 35  2 36  220
+5.5 35.5  2.5 36.5  225
+6 36  3 37  230
+6.5 36.5  3.5 37.5  235
+7 37  4 38  240
+7.5 37.5  4.5 38.5  245
+8 38  5 39  250
+8.5 38.5  5.5 39.5  255
+9 39  6 40  260
+
+ */

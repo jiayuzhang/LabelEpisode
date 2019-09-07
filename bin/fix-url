@@ -1,0 +1,82 @@
+#!/usr/bin/env node
+const cheerio = require('cheerio');
+const fs = require('fs');
+const minimist = require('minimist');
+const process = require('process');
+const rp = require('request-promise-native');
+const slugify = require('slugify');
+const _ = require('lodash');
+var WooCommerceAPI = require('woocommerce-api');
+
+process.chdir(__dirname);
+
+// WooCommerce Auth issue with some hosting (e.g. GoDaddy)
+// https://help.robotninja.com/en/articles/2015407-woocommerce-api-authentication-issues
+var WooCommerce = new WooCommerceAPI({
+  // url: 'http://wp.local',
+  // consumerKey: 'ck_c4b2f6f3a316e7ce9935baebd15aec150b46d8c3',
+  // consumerSecret: 'cs_4ad735eec5faf1a4d20d685a2bb7f87b36c3bb87',
+  url: 'https://www.labelepisode.com/home',
+  consumerKey: 'ck_c23f387bff044f634ae63a8b193c5f0fa195cc6c',
+  consumerSecret: 'cs_1b6459782536ac3a3cda05970ffb13c6124a8f2d',
+  wpAPI: true,
+  version: 'wc/v3',
+  // Force Basic Authentication as query string true and using under HTTPS
+  // GoDaddy apache has issue to passing AUTH header...
+  queryStringAuth: true,
+  timeout: 1000000000
+});
+
+async function fix() {
+  const dedupe = {};
+
+  const data = JSON.parse(fs.readFileSync('./product-ids-2019-09-07', 'utf8'));
+  for (const d of data) {
+    const id = d.ID;
+    console.log(`Fetching WooCommerce product id=${id}`);
+    const response = await WooCommerce.getAsync(`products/${id}`);
+    const wooProduct = JSON.parse(response.body);
+    console.log(`Title: ${wooProduct.name}`);
+
+    let newSlug = slugify(wooProduct.name).toLowerCase().slice(0, 100);
+    if (dedupe[newSlug]) {
+      const cnt = dedupe[newSlug] + 1;
+      dedupe[newSlug] = cnt;
+      newSlug = newSlug + '-' + cnt;
+    } else {
+      dedupe[newSlug] = 1;
+    }
+    console.log(`New slug: ${newSlug}`);
+    await WooCommerce.put(`products/${id}`, { slug: newSlug });
+
+    console.log('=======================================================');
+  }
+}
+
+// function slugify(s) {
+//   s = s.replace(/[-“”‘’'+]/g, '');
+//   s = s.replace(/[ .]/g, '-');
+//   s = encodeURIComponent(s).toLowerCase();
+//   // s = s.substring(0, 200);
+//   return s;
+// }
+
+//=================================
+// Main program
+//=================================
+const args = minimist(process.argv.slice(2));
+
+const catchFn = (err) => {
+  console.log('ERROR!', err);
+  process.exit(0);
+};
+
+const cmd = args._[0];
+switch (cmd) {
+  case 'fix':
+    fix().catch(catchFn);
+    break;
+
+  default:
+    console.error(`"${cmd}" is not a valid command!`);
+}
