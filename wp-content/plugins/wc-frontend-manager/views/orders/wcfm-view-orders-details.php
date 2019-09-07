@@ -214,7 +214,10 @@ do_action('before_wcfm_orders_details', $order_id);
                     </p>
                   <?php if ($order->get_shipping_status() == 'pending') { ?>
                       <button class="wcfm_order_mark_shipped button"
-                              data-orderid="<?php echo $order->get_id() ?>">
+                              data-orderid="<?php echo $order->get_id() ?>"
+                              data-ship-to=
+                              "<?php echo wp_le_is_direct_vendor() ? 'customer' : 'admin' ?>">
+
                         <?php echo __('Mark order shipped', 'wc-frontend-manager') ?>
                       </button>
                   <?php } ?>

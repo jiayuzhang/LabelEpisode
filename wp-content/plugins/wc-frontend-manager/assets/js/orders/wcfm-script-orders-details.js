@@ -57,7 +57,7 @@ jQuery(document).ready(function ($) {
         var data = {
             action: 'wcfm_order_mark_shipped',
             orderid: item.data('orderid'),
-            shipped_to: 'admin',
+            shipped_to: item.data('ship-to'),
             tracking: '',
         }
         $.ajax({
