@@ -28,7 +28,7 @@ Use labelepisode cli `le` to deploy as below:
 
   - incremental, sftp only diffs after a commit/tag, (mostly, server-head)
     ```
-    le deploy -h labelepisode.com -u z9dxje3vnh6c -r /home/z9dxje3vnh6c/public_html -d server-head
+    le deploy -h labelepisode.com -u z9dxje3vnh6c -r /home/z9dxje3vnh6c/public_html -c server-head
     ```
   - full, sftp all local tracked files
 
