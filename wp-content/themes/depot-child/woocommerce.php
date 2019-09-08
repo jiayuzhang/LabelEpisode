@@ -17,7 +17,7 @@ if (!is_singular('product')) { ?>
     <div class="mkd-container-inner clearfix">
       <div class="mkd-grid-row">
         <div <?php echo depot_mikado_get_content_sidebar_class(); ?>>
-          <?php if (!is_tax('product_brand')) { ?>
+          <?php if (!is_brand_page()) { ?>
             <div><?php echo category_description(); ?></div>
           <?php } ?>
           <?php depot_mikado_woocommerce_content(); ?>

@@ -23,3 +23,7 @@ function wp_le_is_direct_vendor($vendor_id = '') {
   global $direct_vendor_ids;
   return in_array($vendor_id, $direct_vendor_ids);
 }
+
+function is_brand_page() {
+  return is_tax('product_brand');
+}
