@@ -1,0 +1,88 @@
+#!/usr/bin/env node
+const cheerio = require('cheerio');
+const fs = require('fs');
+const minimist = require('minimist');
+const process = require('process');
+const randomstring = require("randomstring");
+const rp = require('request-promise-native');
+const slugify = require('slugify');
+const _ = require('lodash');
+var WooCommerceAPI = require('woocommerce-api');
+
+process.chdir(__dirname);
+
+// WooCommerce Auth issue with some hosting (e.g. GoDaddy)
+// https://help.robotninja.com/en/articles/2015407-woocommerce-api-authentication-issues
+var WooCommerce = new WooCommerceAPI({
+  // url: 'http://wp.local',
+  // consumerKey: 'ck_c4b2f6f3a316e7ce9935baebd15aec150b46d8c3',
+  // consumerSecret: 'cs_4ad735eec5faf1a4d20d685a2bb7f87b36c3bb87',
+  url: 'https://www.labelepisode.com/home',
+  consumerKey: 'ck_c23f387bff044f634ae63a8b193c5f0fa195cc6c',
+  consumerSecret: 'cs_1b6459782536ac3a3cda05970ffb13c6124a8f2d',
+  wpAPI: true,
+  version: 'wc/v3',
+  // Force Basic Authentication as query string true and using under HTTPS
+  // GoDaddy apache has issue to passing AUTH header...
+  queryStringAuth: true,
+  timeout: 1000000000
+});
+
+async function listCoupons() {
+  const response = await WooCommerce.getAsync('coupons');
+  const coupons = JSON.parse(response.body);
+
+  for (const c of coupons) {
+    console.log(c);
+    // console.log(`code:${c.code},amount:${c.amount},individual_use:${c.individual_use},free_shipping:${c.free_shipping}\n`);
+  }
+}
+
+async function createCoupon() {
+  const dedupe = {};
+  for (let i = 0; i < 100; i++) {
+    let code = randomstring.generate(8).toUpperCase();
+    while (dedupe[code]) {
+      code = randomstring.generate(8).toUpperCase();
+    }
+    dedupe[code] = 1;
+
+    const data = {
+      code,
+      discount_type: "fixed_cart",
+      amount: "20",
+      individual_use: true,
+      exclude_sale_items: false,
+      free_shipping: true,
+      date_expires: '2019-12-31T00:00:00',
+      usage_limit: 1,
+    };
+    const response = await WooCommerce.postAsync('coupons', data);
+    const result = JSON.parse(response.body);
+    console.log(result.code.toUpperCase());
+  }
+}
+
+//=================================
+// Main program
+//=================================
+const args = minimist(process.argv.slice(2));
+
+const catchFn = (err) => {
+  console.log('ERROR!', err);
+  process.exit(0);
+};
+
+const cmd = args._[0];
+switch (cmd) {
+  case 'list':
+    listCoupons().catch(catchFn);
+    break;
+
+  case 'create':
+    createCoupon().catch(catchFn);
+    break;
+
+  default:
+    console.error(`"${cmd}" is not a valid command!`);
+}
