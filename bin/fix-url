@@ -30,36 +30,40 @@ var WooCommerce = new WooCommerceAPI({
 async function fix() {
   const dedupe = {};
 
-  const data = JSON.parse(fs.readFileSync('./product-ids-2019-09-07', 'utf8'));
-  for (const d of data) {
-    const id = d.ID;
-    console.log(`Fetching WooCommerce product id=${id}`);
-    const response = await WooCommerce.getAsync(`products/${id}`);
-    const wooProduct = JSON.parse(response.body);
-    console.log(`Title: ${wooProduct.name}`);
-
-    let newSlug = slugify(wooProduct.name).toLowerCase().slice(0, 100);
-    if (dedupe[newSlug]) {
-      const cnt = dedupe[newSlug] + 1;
-      dedupe[newSlug] = cnt;
-      newSlug = newSlug + '-' + cnt;
-    } else {
-      dedupe[newSlug] = 1;
-    }
-    console.log(`New slug: ${newSlug}`);
-    await WooCommerce.put(`products/${id}`, { slug: newSlug });
-
+  let curPage = 1;
+  let data = await list(curPage);
+  while (data.length > 0) {
     console.log('=======================================================');
+    console.log(`Fixing page=${curPage}`);
+    // const data = JSON.parse(fs.readFileSync('./product-ids-2019-09-07', 'utf8'));
+    for (const d of data) {
+      // const id = d.ID;
+      // console.log(`Fetching WooCommerce product id=${id}`);
+      // const response = await WooCommerce.getAsync(`products/${id}`);
+      // const wooProduct = JSON.parse(response.body);
+      const wooProduct = d;
+      console.log(`Title: ${wooProduct.name}`);
+
+      let newSlug = slugify(wooProduct.name).toLowerCase().slice(0, 100);
+      if (dedupe[newSlug]) {
+        const cnt = dedupe[newSlug] + 1;
+        dedupe[newSlug] = cnt;
+        newSlug = newSlug + '-' + cnt;
+      } else {
+        dedupe[newSlug] = 1;
+      }
+      console.log(`New slug: ${newSlug}`);
+      await WooCommerce.put(`products/${d.id}`, { slug: newSlug });
+    }
+    curPage += 1;
+    data = await list(curPage);
   }
 }
 
-// function slugify(s) {
-//   s = s.replace(/[-“”‘’'+]/g, '');
-//   s = s.replace(/[ .]/g, '-');
-//   s = encodeURIComponent(s).toLowerCase();
-//   // s = s.substring(0, 200);
-//   return s;
-// }
+async function list(page) {
+  const response = await WooCommerce.getAsync(`products?page=${page}&per_page=20`);
+  return JSON.parse(response.body);
+}
 
 //=================================
 // Main program
