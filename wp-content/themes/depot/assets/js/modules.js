@@ -5215,7 +5215,9 @@ function mkdInitMessageHeight(){
         }
 
         if($('.mkd-woo-single-page .variations select').length) {
-            $('.mkd-woo-single-page .variations select').select2();
+            $('.mkd-woo-single-page .variations select').select2({
+				minimumResultsForSearch: Infinity
+			});
         }
     }
 
