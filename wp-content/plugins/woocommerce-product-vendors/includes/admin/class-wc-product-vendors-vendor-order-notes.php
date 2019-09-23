@@ -109,7 +109,7 @@ class WC_Product_Vendors_Vendor_Order_Notes {
 		if ( $note->comment_author !== 'WooCommerce' ) {
 			$output .= sprintf( ' ' . __( 'by %s (%s)', 'woocommerce-product-vendors' ), $note->comment_author, WC_Product_Vendors_Utils::get_logged_in_vendor( 'name' ) );
 		}
-		
+
 		$output .= '</p>';
 
 		$output .= '</li>';
@@ -191,7 +191,8 @@ class WC_Product_Vendors_Vendor_Order_Notes {
 			<p>
 				<select name="order_note_type" id="order_note_type">
 					<option value=""><?php esc_html_e( 'Private note', 'woocommerce-product-vendors' ); ?></option>
-					<option value="customer"><?php esc_html_e( 'Note to customer', 'woocommerce-product-vendors' ); ?></option>
+          <!-- We dont allow vendor direclty send note to customer -->
+					<!-- <option value="customer"><?php esc_html_e( 'Note to customer', 'woocommerce-product-vendors' ); ?></option> -->
 				</select>
 				<a href="#" class="add_note button" data-id="<?php echo esc_attr( $post->ID ); ?>"><?php esc_html_e( 'Add', 'woocommerce-product-vendors' ); ?></a>
 			</p>
