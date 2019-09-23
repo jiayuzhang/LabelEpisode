@@ -480,3 +480,11 @@ function shipping_status_query_request($query_vars) {
 
   return $query_vars;
 }
+
+// Display vendor-registration link in my-account page
+add_action('woocommerce_register_form_end', 'wp_le_woocommerce_register_form_end', 99);
+function wp_le_woocommerce_register_form_end() {
+  echo '<div>';
+  echo '<a href="/vendor-registration" style="text-decoration:underline;">Vendor register</a>';
+  echo '</div>';
+}

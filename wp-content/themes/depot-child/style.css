@@ -223,3 +223,15 @@ Hide vendor edit button*/
 tr.woocommerce-cart-form__cart-item > td.product-name {
   max-width: 300px;
 }
+
+/* Fix vendor registration style */
+.wcpv-shortcode-registration-form input {
+  border: 1px solid #e1e1e1;
+  font-size: 13px;
+  padding: 15px;
+}
+
+.wcpv-shortcode-registration-form input.button {
+  background-color: #080808;
+  color: #fff;
+}
