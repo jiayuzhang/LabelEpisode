@@ -1,0 +1,403 @@
+#!/usr/bin/env node
+const cheerio = require('cheerio');
+const compareImages = require("resemblejs/compareImages");
+const fs = require('fs');
+const https = require('https');
+const minimist = require('minimist');
+const parse = require('loose-json');
+const rp = require('request-promise-native');
+const process = require('process');
+const _ = require('lodash');
+var WooCommerceAPI = require('woocommerce-api');
+
+process.chdir(__dirname);
+
+// Tag function
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
+function template(strings, ...keys) {
+  return function(...values) {
+    var dict = values[values.length - 1] || {};
+    var result = [strings[0]];
+    keys.forEach(function(key, i) {
+      var value = Number.isInteger(key) ? values[key] : dict[key];
+      result.push(value, strings[i + 1]);
+    });
+    return result.join('');
+  };
+}
+
+const SUCCESS = 1;
+const NOT_FOUND = 2;
+const CRAWLER_ERROR = 4;
+
+const productUrlTemplate = template`https://wx.pin-xu.com/admin/ware/edit?ware_id=${0}`;
+async function product(args) {
+  const id = args.i || args.id;
+
+  const options = {
+    url: productUrlTemplate(id),
+    method: 'GET',
+    headers: {
+      accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+      'accept-encoding': 'gzip, deflate',
+      'accept-language': 'en-US,en;q=0.9,zh-CN,zh;q=0.8,zh-TW;q=0.4',
+      'user-agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97 Safari/537.36',
+      // 'x-requested-with': 'XMLHttpRequest',
+      'cookie': 'PHPSESSID=cbo88bokm3up8t2di4rkr4dqt0; keeplogin=12%7C86400%7C1564197855%7C13838662876485fb6e1dc086e4b78275',
+    },
+    // True to decode compressed content encodings in response
+    gzip: true,
+    resolveWithFullResponse: true,
+    // status codes other than 2xx reject promise
+    simple: true,
+  };
+
+  const response = await rp(options);
+  const $ = cheerio.load(response.body);
+
+  // console.log(response.body);
+
+  let matches = $('body').html().match(/No Results were found/i);
+  if (matches && matches.length > 0) {
+    console.log(`No product found ID=${id}`);
+    return NOT_FOUND;
+  }
+  matches = $('body').html().match(/system-message error/i);
+  if (matches && matches.length > 0) {
+    console.log('Crawler lose session cookie');
+    return CRAWLER_ERROR;
+  }
+
+  const result = {};
+
+  result.id = id;
+  // Parse brand
+  result.brand = _.trim($('#c-shop_id option[selected="selected"]').text());
+  // Title (seems unused and redundant)
+  result.title = _.trim($('#title').attr('value'));
+  // Images (primary and others)
+  result.pic = _.trim($('#c-picture').attr('value'));
+
+  return result;
+}
+
+async function allProducts() {
+  for (let id = 4; id <= 537; id++) {
+    const result = await product({ id });
+    if (result === CRAWLER_ERROR) {
+      console.log(`Error fetch ${id}`);
+    } else if (result === NOT_FOUND) {
+      continue;
+    } else {
+      console.log(result);
+    }
+  }
+}
+
+// The following SQL to list all product ids of a particular brand
+
+// SELECT object_id
+//    FROM `wp_term_relationships` r
+//    LEFT JOIN `wp_terms` t
+//    ON r.term_taxonomy_id = t.term_id
+//    WHERE lower(t.name) = 'blancore'
+
+// WooCommerce Auth issue with some hosting (e.g. GoDaddy)
+// https://help.robotninja.com/en/articles/2015407-woocommerce-api-authentication-issues
+var WooCommerce = new WooCommerceAPI({
+  // url: 'http://wp.local',
+  // consumerKey: 'ck_c4b2f6f3a316e7ce9935baebd15aec150b46d8c3',
+  // consumerSecret: 'cs_4ad735eec5faf1a4d20d685a2bb7f87b36c3bb87',
+  url: 'https://www.labelepisode.com/home',
+  consumerKey: 'ck_c23f387bff044f634ae63a8b193c5f0fa195cc6c',
+  consumerSecret: 'cs_1b6459782536ac3a3cda05970ffb13c6124a8f2d',
+  wpAPI: true,
+  version: 'wc/v3',
+  // Force Basic Authentication as query string true and using under HTTPS
+  // GoDaddy apache has issue to passing AUTH header...
+  queryStringAuth: true,
+  timeout: 1000000000
+});
+
+async function wooProductPrimaryImages(ids) {
+  const products = [];
+  for (const id of ids) {
+    const response = await WooCommerce.getAsync(`products/${id}`);
+    const product = JSON.parse(response.body);
+    if (product.status === 'publish') {
+      const image = await downloadImage(product.images[0].src, 'wordpress');
+      products.push({
+        id: product.id,
+        sku: product.sku,
+        image: image
+      });
+    }
+  }
+  return products;
+}
+
+async function pinxuProductPrimaryImages(brand) {
+  const data = parse(fs.readFileSync('./pinxu-products-2019-09-15', 'utf8'));
+  const products = [];
+  for (const d of data) {
+    let aBrand = d.brand;
+    if (aBrand == 'Nashascope 买手店') {
+      aBrand = d.title;
+    }
+    if (aBrand.toLowerCase() === brand.toLowerCase()) {
+      const image = await downloadImage(d.pic, 'pinxu');
+      products.push({
+        id: d.id,
+        image: image
+      });
+    }
+  }
+  return products;
+}
+
+function downloadImage(url, prefix) {
+  const parts = url.split('/');
+  const img = parts[parts.length - 1];
+  const dest = `/tmp/fix-sku/${prefix}${img}`;
+  if (fs.existsSync(dest)) {
+    return dest;
+  }
+  const file = fs.createWriteStream(dest);
+  return new Promise((resolve, reject) => {
+    https.get(url, response => {
+      response.pipe(file);
+      file.on('finish', () =>{
+        file.close(() => {
+          resolve(dest);
+        });
+      });
+    }).on('error', err => {
+      reject(err);
+    });
+  });
+}
+
+// const BRAND = {
+//   'Blancore': 223,
+//   'FIFTH AVE': 224,
+//   'GEMHOLIC': 225,
+//   'Label Episode': 227,
+//   'MARSEVEN': 228,
+//   'Nashascope': 229,
+//   'NONE OF MY BUSINESS': 230,
+//   'Slumber Chi': 231,
+//   'TIMFORMATION': 232,
+//   'UNDERGRADUATE': 233,
+//   'XINYEJIANG': 234,
+//   'YEE SI': 235,
+//   'The Dirty Collection': 236,
+//   'LECRESCENDO': 237,
+//   'XIAOXU': 238,
+//   'IIMAGEPLUS': 239,
+//   'MS MIN': 240,
+//   'YIRANTIAN': 241,
+//   'ACLER': 242,
+//   'NOMANOMAN': 243,
+//   'JINNNN': 244,
+//   'YUUL YIE': 245,
+//   'VVNK': 246,
+//   'Beton Cire': 247
+// };
+
+//   'Blancore': 223,
+//
+
+async function hasDuplicateSku() {
+  const sku = new Set();
+
+  const ids = [
+7464,
+7473,
+7482,
+7491,
+7500,
+7509,
+7518,
+7532,
+7541,
+7550,
+7559,
+7568,
+7577,
+7586,
+7595,
+7604,
+7613,
+7622,
+7631,
+7640,
+7649,
+7658,
+7667,
+7676,
+7685,
+7694,
+7703,
+7712,
+7721,
+7730,
+7739,
+7748,
+7757,
+7766,
+7814,
+7822,
+7831,
+7840,
+7848,
+7857,
+7866,
+7875,
+7884,
+7893,
+7902,
+7911,
+7920,
+7929,
+7938,
+7947,
+7956,
+9627,
+9636,
+9645,
+9654,
+9811,
+9820,
+  ];
+  const wooImgs = await wooProductPrimaryImages(ids);
+  for (const wooImg of wooImgs) {
+    if (sku.has(wooImg.sku)) {
+      console.log('Duplicate' + wooImg.sku);
+    }
+    sku.add(wooImg.sku);
+  }
+}
+
+async function fixSkuByBrand() {
+  const ids = [
+7464,
+7473,
+7482,
+7491,
+7500,
+7509,
+7518,
+7532,
+7541,
+7550,
+7559,
+7568,
+7577,
+7586,
+7595,
+7604,
+7613,
+7622,
+7631,
+7640,
+7649,
+7658,
+7667,
+7676,
+7685,
+7694,
+7703,
+7712,
+7721,
+7730,
+7739,
+7748,
+7757,
+7766,
+7814,
+7822,
+7831,
+7840,
+7848,
+7857,
+7866,
+7875,
+7884,
+7893,
+7902,
+7911,
+7920,
+7929,
+7938,
+7947,
+7956,
+9627,
+9636,
+9645,
+9654,
+9811,
+9820,
+  ];
+  const wooImgs = await wooProductPrimaryImages(ids);
+  console.log(wooImgs);
+
+  console.log('==============');
+
+  let pxImgs = await pinxuProductPrimaryImages('gemholic');
+  console.log(pxImgs);
+
+  for (const wooImg of wooImgs) {
+    let found = false;
+    for (let i = 0; i < pxImgs.length; i++) {
+      const pxImg = pxImgs[i];
+      const diff = await compareImages(
+        fs.readFileSync(wooImg.image),
+        fs.readFileSync(pxImg.image),
+        { returnEarlyThreshold: 5 });
+      if (diff.misMatchPercentage == 0) {
+        console.log(`Match: wp=${wooImg.id} px=${pxImg.id}`);
+
+        const newSku = `px${pxImg.id}`;
+        if (newSku !== wooImg.sku) {
+          console.log(`And update wp=${wooImg.id} sku from=${wooImg.sku} to=${newSku}`);
+          await WooCommerce.put(`products/${wooImg.id}`, { sku: `px${pxImg.id}` });
+        }
+
+        found = true;
+        pxImgs.splice(i, 1);
+        break;
+      }
+    }
+    if (!found) {
+      console.log(`No match: wp=${wooImg.id}`);
+    }
+  }
+}
+
+const catchFn = (err) => {
+  console.log('ERROR!', err);
+  process.exit(0);
+};
+
+// Main program
+const args = minimist(process.argv.slice(2));
+
+const cmd = args._[0];
+switch (cmd) {
+  case 'products':
+    allProducts().catch(catchFn);
+    break;
+
+  case 'fix':
+    fixSkuByBrand().catch(catchFn);
+    break;
+
+  case 'dup':
+    hasDuplicateSku().catch(catchFn);
+    break;
+
+  default:
+    console.error(`"${cmd}" is not a valid command!`);
+}
+
