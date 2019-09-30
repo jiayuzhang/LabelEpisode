@@ -2,12 +2,12 @@ const _ = require('lodash');
 
 const WooCommerceAPI = require('woocommerce-api');
 const api = new WooCommerceAPI({
-    url: 'http://127.0.0.1/dup',
-    consumerKey: 'ck_9ac54c237b32e3d85e8697e99ce8e6dc4122ccbd',
-    consumerSecret: 'cs_32cd477546becc2f2fd55810060d72e922f749b1',
-    // url: 'https://www.labelepisode.com/home',
-    // consumerKey: 'ck_c23f387bff044f634ae63a8b193c5f0fa195cc6c',
-    // consumerSecret: 'cs_1b6459782536ac3a3cda05970ffb13c6124a8f2d',
+    // url: 'http://127.0.0.1/dup',
+    // consumerKey: 'ck_9ac54c237b32e3d85e8697e99ce8e6dc4122ccbd',
+    // consumerSecret: 'cs_32cd477546becc2f2fd55810060d72e922f749b1',
+    url: 'https://www.labelepisode.com/home',
+    consumerKey: 'ck_c23f387bff044f634ae63a8b193c5f0fa195cc6c',
+    consumerSecret: 'cs_1b6459782536ac3a3cda05970ffb13c6124a8f2d',
     wpAPI: true,
     version: 'wc/v3',
     // Force Basic Authentication as query string true and using under HTTPS

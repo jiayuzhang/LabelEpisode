@@ -81,10 +81,10 @@ function toProduct(product_json) {
     product.attributes = _.values(attributes);
 
     if (product_json.shop_id === constants.BRAND_NASHA_ID) {
-        product.brand = constants.BRANDS[product_json.title];
+        product.brands = [constants.BRANDS[product_json.title]];
         product.name = product_json.sub_title;
     } else {
-        product.brand = constants.BRANDS[product_json.shop_id];
+        product.brands = [constants.BRANDS[product_json.shop_id]];
         product.name = product_json.title;
         product.short_description = product_json.sub_title;
     }
